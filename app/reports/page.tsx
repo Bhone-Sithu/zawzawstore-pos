@@ -169,7 +169,7 @@ export default function ReportsDashboard() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium text-green-900">Daily Sales Report</p>
-                      <p className="text-sm text-green-600">Today's performance summary</p>
+                      <p className="text-sm text-green-600">Today&apos;s performance summary</p>
                     </div>
                     <span className="text-green-600">📄</span>
                   </div>
@@ -182,7 +182,7 @@ export default function ReportsDashboard() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium text-blue-900">Monthly Sales Report</p>
-                      <p className="text-sm text-blue-600">This month's comprehensive data</p>
+                      <p className="text-sm text-blue-600">This month&apos;s comprehensive data</p>
                     </div>
                     <span className="text-blue-600">📊</span>
                   </div>

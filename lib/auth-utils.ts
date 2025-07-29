@@ -28,7 +28,8 @@ export const ROLE_PERMISSIONS = {
 } as const
 
 export function hasPermission(userRole: UserRole, path: string): boolean {
-  return ROLE_PERMISSIONS[userRole]?.includes(path) || false
+  const permissions = ROLE_PERMISSIONS[userRole] as readonly string[]
+  return permissions?.includes(path) || false
 }
 
 export function getDefaultRoute(userRole: UserRole): string {

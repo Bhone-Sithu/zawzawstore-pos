@@ -31,8 +31,8 @@ export default function LoginPage() {
       } else {
         setError('Sign in failed. Please try again.')
       }
-    } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'An error occurred. Please try again.')
+    } catch (err: unknown) {
+      setError((err as { errors?: { message: string }[] })?.errors?.[0]?.message || 'An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }

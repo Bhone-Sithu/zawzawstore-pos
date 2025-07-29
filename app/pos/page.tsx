@@ -175,7 +175,7 @@ export default function POSDashboard() {
                   </div>
                 </div>
                 <div className="ml-5">
-                  <p className="text-sm font-medium text-gray-500">Today's Sales</p>
+                  <p className="text-sm font-medium text-gray-500">Today&apos;s Sales</p>
                   <p className="text-lg font-medium text-gray-900">RM 1,247.50</p>
                 </div>
               </div>

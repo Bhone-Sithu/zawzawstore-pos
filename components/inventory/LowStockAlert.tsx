@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Product, Inventory } from '@/types/database.types'
+import type { Product } from '@/types/database.types'
 
 interface LowStockProduct extends Product {
   total_stock: number
@@ -51,10 +51,10 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
       const processedProducts: LowStockProduct[] = []
 
       for (const product of productsData || []) {
-        const totalStock = product.inventory.reduce((sum: number, inv: any) => sum + inv.quantity, 0)
+        const totalStock = product.inventory.reduce((sum: number, inv: { quantity: number }) => sum + inv.quantity, 0)
         
         if (totalStock <= product.low_stock_threshold) {
-          const inventoryByBranch = product.inventory.map((inv: any) => ({
+          const inventoryByBranch = product.inventory.map((inv: { quantity: number; branch: { name: string; location: string } }) => ({
             branch_name: inv.branch.name,
             branch_location: inv.branch.location,
             quantity: inv.quantity

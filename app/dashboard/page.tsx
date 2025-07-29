@@ -1,28 +1,20 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Branch, UserRole } from '@/types/database.types'
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
-  const searchParams = useSearchParams()
   const router = useRouter()
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranch, setSelectedBranch] = useState<string>('')
   const [error, setError] = useState<string>('')
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      setupUserInSupabase()
-      fetchBranches()
-    }
-  }, [isLoaded, user])
-
-  const setupUserInSupabase = async () => {
+  const setupUserInSupabase = useCallback(async () => {
     if (!user) return
 
     try {
@@ -63,9 +55,9 @@ export default function DashboardPage() {
       console.error('Error setting up user:', error)
       setError('Failed to load user account. Please try again.')
     }
-  }
+  }, [user, router])
 
-  const fetchBranches = async () => {
+  const fetchBranches = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('branches')
@@ -84,24 +76,14 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching branches:', error)
     }
-  }
+  }, [])
 
-  const redirectToDashboard = () => {
-    // Redirect based on role immediately
-    switch (userRole) {
-      case 'admin':
-        router.push('/admin')
-        break
-      case 'cashier':
-        router.push('/pos')
-        break
-      case 'boss':
-        router.push('/reports')
-        break
-      default:
-        router.push('/login')
+  useEffect(() => {
+    if (isLoaded && user) {
+      setupUserInSupabase()
+      fetchBranches()
     }
-  }
+  }, [isLoaded, user, setupUserInSupabase, fetchBranches])
 
   if (!isLoaded) {
     return (
