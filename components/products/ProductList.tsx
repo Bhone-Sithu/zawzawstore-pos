@@ -69,7 +69,7 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
 
       const productsWithInventory = productsData?.map(product => {
         const totalStock = product.inventory?.reduce((sum: number, inv: { quantity: number }) => sum + inv.quantity, 0) || 0
-        const lowStock = totalStock <= product.low_stock_threshold
+        const lowStock = totalStock <= 5 // Default low stock threshold
 
         return {
           ...product,
@@ -186,10 +186,8 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <p className="font-medium">RM {product.selling_price.toFixed(2)}</p>
-                      <p className="text-xs text-gray-700">
-                        Cost: RM {product.cost_price.toFixed(2)}
-                      </p>
+                      <p className="font-medium">RM {product.base_price.toFixed(2)}</p>
+                      <p className="text-xs text-gray-700">Base Price</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -198,7 +196,7 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
                         {product.total_stock} units
                       </p>
                       <p className="text-xs text-gray-700">
-                        Alert: ≤{product.low_stock_threshold}
+                        Alert: ≤5 units
                       </p>
                     </div>
                   </TableCell>

@@ -48,12 +48,9 @@ CREATE TABLE products (
     barcode VARCHAR(50) UNIQUE NOT NULL,
     name_en VARCHAR(200) NOT NULL,
     name_mm VARCHAR(200) NOT NULL,
-    description_en TEXT,
-    description_mm TEXT,
+    image TEXT,
     category_id UUID REFERENCES categories(id),
-    cost_price DECIMAL(10,2) NOT NULL,
-    selling_price DECIMAL(10,2) NOT NULL,
-    low_stock_threshold INTEGER DEFAULT 3,
+    base_price DECIMAL(10,2) NOT NULL,
     expiry_date DATE,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -66,7 +63,7 @@ CREATE TABLE inventory (
     product_id UUID REFERENCES products(id) ON DELETE CASCADE,
     branch_id UUID REFERENCES branches(id) ON DELETE CASCADE,
     quantity INTEGER NOT NULL DEFAULT 0,
-    reserved_quantity INTEGER DEFAULT 0,
+    price DECIMAL(10,2),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(product_id, branch_id)
 );

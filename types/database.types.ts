@@ -38,12 +38,9 @@ export interface Product {
   barcode: string
   name_en: string
   name_mm: string
-  description_en?: string
-  description_mm?: string
+  image: string
   category_id?: string
-  cost_price: number
-  selling_price: number
-  low_stock_threshold: number
+  base_price : number
   expiry_date?: string
   is_active: boolean
   created_at: string
@@ -62,7 +59,7 @@ export interface Inventory {
   product_id: string
   branch_id: string
   quantity: number
-  reserved_quantity: number
+  price: number //Optional
   updated_at: string
 }
 
