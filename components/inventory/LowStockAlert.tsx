@@ -144,7 +144,6 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-red-600">{product.total_stock} units</p>
-                    <p className="text-xs text-gray-500">Alert: ≤{product.low_stock_threshold}</p>
                   </div>
                 </div>
 
@@ -153,7 +152,8 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
                   <p className="text-xs font-medium text-gray-700 mb-2">Stock by Branch:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {product.inventory_by_branch.map((branch, index) => (
-                      <div key={index} className="bg-gray-50 rounded p-2">
+                      // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+<div key={index} className="bg-gray-50 rounded p-2">
                         <p className="text-xs font-medium text-gray-900">{branch.branch_name}</p>
                         <p className="text-xs text-gray-600">{branch.branch_location}</p>
                         <p className={`text-sm font-bold ${branch.quantity === 0 ? 'text-red-600' : 'text-gray-900'}`}>
