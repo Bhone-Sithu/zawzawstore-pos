@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Branch, UserRole } from '@/types/database.types'
+import { UserCog, CreditCard, BarChart3, AlertCircle, MapPin, Store, Loader2, ArrowRight } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
@@ -13,6 +14,7 @@ export default function DashboardPage() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranch, setSelectedBranch] = useState<string>('')
   const [error, setError] = useState<string>('')
+  const [redirectCountdown, setRedirectCountdown] = useState(3)
 
   const setupUserInSupabase = useCallback(async () => {
     if (!user) return
@@ -32,20 +34,28 @@ export default function DashboardPage() {
           setSelectedBranch(existingUser.branch_id)
         }
         
-        // Auto-redirect based on role
-        setTimeout(() => {
-          switch (existingUser.role) {
-            case 'admin':
-              router.push('/admin')
-              break
-            case 'cashier':
-              router.push('/pos')
-              break
-            case 'boss':
-              router.push('/reports')
-              break
-          }
-        }, 1000) // Small delay to show welcome message
+        // Start countdown
+        const countdown = setInterval(() => {
+          setRedirectCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdown)
+              // Auto-redirect based on role
+              switch (existingUser.role) {
+                case 'admin':
+                  router.push('/admin')
+                  break
+                case 'cashier':
+                  router.push('/pos')
+                  break
+                case 'boss':
+                  router.push('/reports')
+                  break
+              }
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
         
       } else {
         // User doesn't exist, redirect to setup or show error
@@ -89,8 +99,8 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto" />
+          <p className="mt-4 text-gray-600 font-medium">Loading...</p>
         </div>
       </div>
     )
@@ -104,17 +114,17 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md border border-gray-200">
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-              <span className="text-red-600 text-xl">⚠️</span>
+            <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-xl bg-red-100 mb-6">
+              <AlertCircle className="h-8 w-8 text-red-600" />
             </div>
-            <h2 className="mt-4 text-lg font-medium text-gray-900">Access Denied</h2>
-            <p className="mt-2 text-sm text-gray-600">{error}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Access Denied</h2>
+            <p className="text-gray-600 mb-6 leading-relaxed">{error}</p>
             <button
               type="button"
               onClick={() => router.push('/login')}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-sm"
             >
               Back to Login
             </button>
@@ -127,41 +137,146 @@ export default function DashboardPage() {
   // Get user's branch name for display
   const userBranch = branches.find(branch => branch.id === selectedBranch)
 
+  const getRoleConfig = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return {
+          icon: UserCog,
+          label: 'Administrator',
+          color: 'orange',
+          description: 'Full system access',
+          destination: 'Admin Dashboard'
+        }
+      case 'cashier':
+        return {
+          icon: CreditCard,
+          label: 'Cashier',
+          color: 'green',
+          description: 'Point of Sale operations',
+          destination: 'POS Terminal'
+        }
+      case 'boss':
+        return {
+          icon: BarChart3,
+          label: 'Management',
+          color: 'blue',
+          description: 'Reports and analytics',
+          destination: 'Reports Dashboard'
+        }
+      default:
+        return {
+          icon: UserCog,
+          label: 'User',
+          color: 'gray',
+          description: 'System access',
+          destination: 'Dashboard'
+        }
+    }
+  }
+
+  const roleConfig = userRole ? getRoleConfig(userRole) : null
+  const RoleIcon = roleConfig?.icon || UserCog
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome!</h1>
-          <p className="text-gray-900 mb-4">Hi {user.firstName}</p>
-          
-          <div className="mb-6 inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            {userRole === 'admin' && '👨‍💼 Administrator'}
-            {userRole === 'cashier' && '💰 Cashier'}
-            {userRole === 'boss' && '📊 Management'}
-          </div>
-
-          {userBranch && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-700 mb-1">Assigned Branch</p>
-              <p className="font-medium text-gray-900">{userBranch.name}</p>
-              <p className="text-sm text-gray-900">{userBranch.location}</p>
-            </div>
-          )}
-
-          {!userBranch && userRole !== 'boss' && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-700">No branch assigned</p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-center mb-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-            <p className="ml-3 text-gray-900">Redirecting to your dashboard...</p>
-          </div>
-
+      <div className="w-full max-w-lg mx-auto">
+        {/* Welcome Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200 animate-slide-up">
           <div className="text-center">
-            <p className="text-xs text-gray-500">ZawZaw Store POS System</p>
+            {/* Store Logo */}
+            <div className="w-16 h-16 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-6">
+              <Store className="h-8 w-8 text-white" />
+            </div>
+
+            {/* Welcome Message */}
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
+            <p className="text-gray-600 text-lg mb-6">Hi {user.firstName || user.emailAddresses[0]?.emailAddress}</p>
+            
+            {/* Role Badge */}
+            {roleConfig && (
+              <div className={`
+                mb-6 inline-flex items-center px-6 py-3 rounded-xl text-sm font-medium gap-3
+                ${roleConfig.color === 'orange' ? 'bg-orange-100 text-orange-800' : ''}
+                ${roleConfig.color === 'green' ? 'bg-green-100 text-green-800' : ''}
+                ${roleConfig.color === 'blue' ? 'bg-blue-100 text-blue-800' : ''}
+                ${roleConfig.color === 'gray' ? 'bg-gray-100 text-gray-800' : ''}
+              `}>
+                <RoleIcon className="h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-semibold">{roleConfig.label}</div>
+                  <div className="text-xs opacity-80">{roleConfig.description}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Branch Info */}
+            {userBranch && (
+              <div className="mb-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-center mb-3">
+                  <MapPin className="h-5 w-5 text-gray-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Assigned Branch</p>
+                  <p className="font-bold text-gray-900 text-lg">{userBranch.name}</p>
+                  <p className="text-gray-600">{userBranch.location}</p>
+                </div>
+              </div>
+            )}
+
+            {!userBranch && userRole !== 'boss' && (
+              <div className="mb-6 p-6 bg-yellow-50 rounded-xl border border-yellow-200">
+                <p className="text-yellow-800 font-medium">No branch assigned</p>
+                <p className="text-yellow-600 text-sm">Contact your administrator</p>
+              </div>
+            )}
+
+            {/* Redirect Countdown */}
+            <div className="mb-6 p-6 bg-orange-50 rounded-xl border border-orange-200">
+              <div className="flex items-center justify-center mb-3">
+                <Loader2 className="h-6 w-6 text-orange-500 animate-spin" />
+              </div>
+              <p className="text-orange-900 font-semibold mb-1">
+                Redirecting to {roleConfig?.destination}...
+              </p>
+              <p className="text-orange-700 text-sm">
+                Redirecting in {redirectCountdown} second{redirectCountdown !== 1 ? 's' : ''}
+              </p>
+              <div className="mt-3 bg-orange-200 rounded-full h-2">
+                <div 
+                  className="bg-orange-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${((3 - redirectCountdown) / 3) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Manual Redirect Button */}
+            <button
+              onClick={() => {
+                if (userRole) {
+                  switch (userRole) {
+                    case 'admin':
+                      router.push('/admin')
+                      break
+                    case 'cashier':
+                      router.push('/pos')
+                      break
+                    case 'boss':
+                      router.push('/reports')
+                      break
+                  }
+                }
+              }}
+              className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-sm flex items-center justify-center gap-2"
+            >
+              Continue Now
+              <ArrowRight className="h-5 w-5" />
+            </button>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-6">
+          <p className="text-gray-500 text-sm">ZawZaw Store POS System</p>
         </div>
       </div>
     </div>

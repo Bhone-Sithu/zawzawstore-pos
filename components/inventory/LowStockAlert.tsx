@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Product } from '@/types/database.types'
+import { CheckCircle, AlertTriangle, RefreshCw, ChevronDown } from 'lucide-react'
 
 interface LowStockProduct extends Product {
   total_stock: number
@@ -91,7 +92,7 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-center">
-          <span className="text-green-600 mr-2">✅</span>
+          <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
           <span className="text-sm font-medium text-green-800">All products are well-stocked!</span>
         </div>
       </div>
@@ -104,7 +105,7 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
       <div className="p-4 border-b border-red-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <span className="text-red-600 mr-2">⚠️</span>
+            <AlertTriangle className="h-4 w-4 text-red-600 mr-2" />
             <h3 className="text-lg font-medium text-red-800">
               Low Stock Alert ({lowStockProducts.length} items)
             </h3>
@@ -116,18 +117,14 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
               className="text-red-600 hover:text-red-800"
               title="Refresh"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <RefreshCw className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="text-red-600 hover:text-red-800"
             >
-              <svg className={`h-4 w-4 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown className={`h-4 w-4 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
             </button>
           </div>
         </div>

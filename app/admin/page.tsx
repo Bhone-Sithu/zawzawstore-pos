@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import InventoryManagement from '@/components/inventory/InventoryManagement'
+import ProductsManagement from '@/components/products/ProductsManagement'
+import { Users, Package, AlertTriangle, Store, UserCog, BarChart3, Settings } from 'lucide-react'
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
-  const [currentView, setCurrentView] = useState<'dashboard' | 'inventory' | 'users' | 'settings'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'inventory' | 'products' | 'users' | 'settings'>('dashboard')
 
   useEffect(() => {
     const checkPermissions = async () => {
@@ -45,7 +47,7 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -60,6 +62,8 @@ export default function AdminDashboard() {
     switch (currentView) {
       case 'inventory':
         return <InventoryManagement />
+      case 'products':
+        return <ProductsManagement />
       case 'users':
         return (
           <div className="bg-white rounded-lg shadow p-6">
@@ -84,7 +88,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">👥</span>
+                        <Users className="h-4 w-4 text-white" />
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
@@ -102,7 +106,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">📦</span>
+                        <Package className="h-4 w-4 text-white" />
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
@@ -120,7 +124,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">⚠️</span>
+                        <AlertTriangle className="h-4 w-4 text-white" />
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
@@ -138,7 +142,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">🏪</span>
+                        <Store className="h-4 w-4 text-white" />
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
@@ -162,27 +166,27 @@ export default function AdminDashboard() {
                     onClick={() => setCurrentView('users')}
                     className="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200"
                   >
-                    👨‍💼 Manage Staff Accounts
+                    <UserCog className="h-4 w-4 inline mr-2" />Manage Staff Accounts
                   </button>
                   <button 
                     type="button"
                     onClick={() => setCurrentView('inventory')}
                     className="w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200"
                   >
-                    📦 Manage Inventory
+                    <Package className="h-4 w-4 inline mr-2" />Manage Inventory
                   </button>
                   <button 
                     type="button"
                     className="w-full text-left p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg border border-yellow-200"
                   >
-                    📊 View Sales Reports
+                    <BarChart3 className="h-4 w-4 inline mr-2" />View Sales Reports
                   </button>
                   <button 
                     type="button"
                     onClick={() => setCurrentView('settings')}
                     className="w-full text-left p-3 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200"
                   >
-                    ⚙️ System Settings
+                    <Settings className="h-4 w-4 inline mr-2" />System Settings
                   </button>
                 </div>
               </div>
@@ -227,7 +231,7 @@ export default function AdminDashboard() {
                   onClick={() => setCurrentView('dashboard')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     currentView === 'dashboard'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-orange-100 text-orange-700'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -238,7 +242,7 @@ export default function AdminDashboard() {
                   onClick={() => setCurrentView('inventory')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     currentView === 'inventory'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-orange-100 text-orange-700'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -246,10 +250,21 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setCurrentView('products')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    currentView === 'products'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Products
+                </button>
+                <button
+                  type="button"
                   onClick={() => setCurrentView('users')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     currentView === 'users'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-orange-100 text-orange-700'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -260,7 +275,7 @@ export default function AdminDashboard() {
                   onClick={() => setCurrentView('settings')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     currentView === 'settings'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-orange-100 text-orange-700'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >

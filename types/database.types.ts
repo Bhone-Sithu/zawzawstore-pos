@@ -50,6 +50,13 @@ export interface Product {
   updated_at: string
 }
 
+export interface ProductWithCategory extends Product {
+  categories?: {
+    name_en: string
+    name_mm: string
+  }
+}
+
 export interface Inventory {
   id: string
   product_id: string

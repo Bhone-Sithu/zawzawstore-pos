@@ -4,6 +4,7 @@ import { useUser, SignOutButton } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { DollarSign, BarChart3, TrendingUp, Store, FileText, Mail } from 'lucide-react'
 
 export default function ReportsDashboard() {
   const { user, isLoaded } = useUser()
@@ -88,7 +89,7 @@ export default function ReportsDashboard() {
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">💰</span>
+                      <DollarSign className="h-4 w-4 text-white" />
                     </div>
                   </div>
                   <div className="ml-5 w-0 flex-1">
@@ -106,7 +107,7 @@ export default function ReportsDashboard() {
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">📊</span>
+                      <BarChart3 className="h-4 w-4 text-white" />
                     </div>
                   </div>
                   <div className="ml-5 w-0 flex-1">
@@ -124,7 +125,7 @@ export default function ReportsDashboard() {
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">📈</span>
+                      <TrendingUp className="h-4 w-4 text-white" />
                     </div>
                   </div>
                   <div className="ml-5 w-0 flex-1">
@@ -142,7 +143,7 @@ export default function ReportsDashboard() {
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">🏪</span>
+                      <Store className="h-4 w-4 text-white" />
                     </div>
                   </div>
                   <div className="ml-5 w-0 flex-1">
@@ -171,7 +172,7 @@ export default function ReportsDashboard() {
                       <p className="font-medium text-green-900">Daily Sales Report</p>
                       <p className="text-sm text-green-600">Today&apos;s performance summary</p>
                     </div>
-                    <span className="text-green-600">📄</span>
+                    <FileText className="h-4 w-4 text-green-600" />
                   </div>
                 </button>
                 
@@ -184,7 +185,7 @@ export default function ReportsDashboard() {
                       <p className="font-medium text-blue-900">Monthly Sales Report</p>
                       <p className="text-sm text-blue-600">This month&apos;s comprehensive data</p>
                     </div>
-                    <span className="text-blue-600">📊</span>
+                    <BarChart3 className="h-4 w-4 text-blue-600" />
                   </div>
                 </button>
                 
@@ -197,7 +198,7 @@ export default function ReportsDashboard() {
                       <p className="font-medium text-purple-900">Yearly Analysis</p>
                       <p className="text-sm text-purple-600">Annual performance insights</p>
                     </div>
-                    <span className="text-purple-600">📈</span>
+                    <TrendingUp className="h-4 w-4 text-purple-600" />
                   </div>
                 </button>
               </div>
@@ -250,7 +251,7 @@ export default function ReportsDashboard() {
                   type="button"
                   className="w-full flex items-center justify-center p-3 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200"
                 >
-                  <span className="mr-2">📄</span>
+                  <FileText className="h-4 w-4 mr-2" />
                   Export as PDF
                 </button>
                 
@@ -258,7 +259,7 @@ export default function ReportsDashboard() {
                   type="button"
                   className="w-full flex items-center justify-center p-3 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200"
                 >
-                  <span className="mr-2">📊</span>
+                  <BarChart3 className="h-4 w-4 mr-2" />
                   Export as CSV
                 </button>
                 
@@ -266,7 +267,7 @@ export default function ReportsDashboard() {
                   type="button"
                   className="w-full flex items-center justify-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200"
                 >
-                  <span className="mr-2">📧</span>
+                  <Mail className="h-4 w-4 mr-2" />
                   Email Report
                 </button>
               </div>

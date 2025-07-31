@@ -4,6 +4,7 @@ import { useUser, SignOutButton } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Camera, DollarSign, ShoppingCart, Clock } from 'lucide-react'
 
 export default function POSDashboard() {
   const { user, isLoaded } = useUser()
@@ -96,7 +97,7 @@ export default function POSDashboard() {
                     type="button"
                     className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    📷 Scan
+                    <Camera className="h-4 w-4 inline mr-1" />Scan
                   </button>
                 </div>
                 
@@ -159,7 +160,7 @@ export default function POSDashboard() {
                   className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-medium"
                   disabled
                 >
-                  💳 Process Payment
+                  <ShoppingCart className="h-4 w-4 inline mr-2" />Process Payment
                 </button>
               </div>
             </div>
@@ -171,7 +172,7 @@ export default function POSDashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">💰</span>
+                    <DollarSign className="h-4 w-4 text-white" />
                   </div>
                 </div>
                 <div className="ml-5">
@@ -185,7 +186,7 @@ export default function POSDashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">🛒</span>
+                    <ShoppingCart className="h-4 w-4 text-white" />
                   </div>
                 </div>
                 <div className="ml-5">
@@ -199,7 +200,7 @@ export default function POSDashboard() {
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">⏰</span>
+                    <Clock className="h-4 w-4 text-white" />
                   </div>
                 </div>
                 <div className="ml-5">

@@ -1,25 +1,24 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import ProductList from './ProductList'
-import ProductForm from './ProductForm'
 import LowStockAlert from './LowStockAlert'
 import type { Product } from '@/types/database.types'
+import { Package, AlertTriangle, RefreshCw, Download, Plus, X } from 'lucide-react'
 
 export default function InventoryManagement() {
-  const [showProductForm, setShowProductForm] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const router = useRouter()
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [activeTab, setActiveTab] = useState<'products' | 'alerts'>('products')
 
   const handleAddProduct = () => {
-    setEditingProduct(null)
-    setShowProductForm(true)
+    router.push('/admin/products/create')
   }
 
   const handleEditProduct = (product: Product) => {
-    setEditingProduct(product)
-    setShowProductForm(true)
+    // For now, redirect to create page - we can create an edit page later
+    router.push(`/admin/products/create?edit=${product.id}`)
   }
 
   const handleDeleteProduct = async (productId: string) => {
@@ -46,14 +45,6 @@ export default function InventoryManagement() {
     }
   }
 
-  const handleFormSave = () => {
-    setRefreshTrigger(prev => prev + 1)
-  }
-
-  const handleFormClose = () => {
-    setShowProductForm(false)
-    setEditingProduct(null)
-  }
 
   const refreshData = () => {
     setRefreshTrigger(prev => prev + 1)
@@ -70,9 +61,10 @@ export default function InventoryManagement() {
         <button
           type="button"
           onClick={handleAddProduct}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-medium flex items-center gap-2"
         >
-          + Add Product
+          <Plus className="h-4 w-4" />
+          Add Product
         </button>
       </div>
 
@@ -86,24 +78,26 @@ export default function InventoryManagement() {
             <button
               type="button"
               onClick={() => setActiveTab('products')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                 activeTab === 'products'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              📦 All Products
+              <Package className="h-4 w-4" />
+              All Products
             </button>
             <button
               type="button" 
               onClick={() => setActiveTab('alerts')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                 activeTab === 'alerts'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              ⚠️ Stock Alerts
+              <AlertTriangle className="h-4 w-4" />
+              Stock Alerts
             </button>
           </nav>
         </div>
@@ -117,9 +111,10 @@ export default function InventoryManagement() {
                   <button
                     type="button"
                     onClick={refreshData}
-                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center gap-2"
                   >
-                    🔄 Refresh
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh
                   </button>
                   <button
                     type="button"
@@ -127,9 +122,10 @@ export default function InventoryManagement() {
                       // Export functionality would go here
                       console.log('Export products')
                     }}
-                    className="px-3 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200"
+                    className="px-3 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center gap-2"
                   >
-                    📊 Export
+                    <Download className="h-4 w-4" />
+                    Export
                   </button>
                 </div>
               </div>
@@ -153,7 +149,9 @@ export default function InventoryManagement() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center">
-                    <span className="text-blue-600 text-xl mr-3">📦</span>
+                    <div className="text-blue-600 mr-3">
+                      <Package className="h-6 w-6" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium text-blue-800">Total Products</p>
                       <p className="text-2xl font-bold text-blue-900">--</p>
@@ -163,7 +161,9 @@ export default function InventoryManagement() {
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-center">
-                    <span className="text-yellow-600 text-xl mr-3">⚠️</span>
+                    <div className="text-yellow-600 mr-3">
+                      <AlertTriangle className="h-6 w-6" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium text-yellow-800">Low Stock Items</p>
                       <p className="text-2xl font-bold text-yellow-900">--</p>
@@ -173,7 +173,9 @@ export default function InventoryManagement() {
 
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div className="flex items-center">
-                    <span className="text-red-600 text-xl mr-3">🚫</span>
+                    <div className="text-red-600 mr-3">
+                      <X className="h-6 w-6" />
+                    </div>
                     <div>
                       <p className="text-sm font-medium text-red-800">Out of Stock</p>
                       <p className="text-2xl font-bold text-red-900">--</p>
@@ -189,13 +191,6 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      {/* Product Form Modal */}
-      <ProductForm
-        product={editingProduct}
-        isOpen={showProductForm}
-        onClose={handleFormClose}
-        onSave={handleFormSave}
-      />
     </div>
   )
 }
