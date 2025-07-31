@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useProductForm } from '@/hooks/use-product-form'
 import { useCategories } from '@/hooks/use-categories'
+import { Form } from '@/components/ui/form'
 import ProductFormFields from '@/components/products/ProductFormFields'
 import ImageUploadSection from '@/components/products/ImageUploadSection'
 import LoadingSpinner from '@/components/ui/loading-spinner'
@@ -14,19 +15,15 @@ export default function CreateProductPage() {
   const { isAuthorized, isLoading: authLoading } = useAuth('admin')
   const { categories } = useCategories()
   const {
-    formData,
-    errors,
+    form,
     loading,
-    updateField,
+    submitError,
     generateBarcode,
     clearForm,
     submitForm
   } = useProductForm()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await submitForm()
-  }
+  const handleSubmit = form.handleSubmit(submitForm)
 
   const handleCancel = () => {
     router.push('/admin/products')
@@ -86,27 +83,27 @@ export default function CreateProductPage() {
           </div>
         </div>
 
-        <form id="product-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* General Information */}
-          <div className="lg:col-span-2">
-            <ProductFormFields
-              formData={formData}
-              errors={errors}
-              categories={categories}
-              onUpdateField={updateField}
-              onGenerateBarcode={generateBarcode}
-            />
-          </div>
+        <Form {...form}>
+          <form id="product-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* General Information */}
+            <div className="lg:col-span-2">
+              <ProductFormFields
+                form={form}
+                categories={categories}
+                onGenerateBarcode={generateBarcode}
+              />
+            </div>
 
-          {/* Upload Images */}
-          <div className="lg:col-span-1">
-            <ImageUploadSection />
-          </div>
-        </form>
+            {/* Upload Images */}
+            <div className="lg:col-span-1">
+              <ImageUploadSection />
+            </div>
+          </form>
+        </Form>
 
-        {errors.general && (
+        {submitError && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{errors.general}</p>
+            <p className="text-sm text-red-600">{submitError}</p>
           </div>
         )}
       </main>

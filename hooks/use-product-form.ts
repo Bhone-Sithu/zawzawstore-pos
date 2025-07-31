@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { createProduct, generateBarcode } from '@/services/product-service'
-import type { CreateProductData, ProductFormData, ProductFormErrors } from '@/types/product.types'
+import { productFormSchema, type ProductFormSchema } from '@/schemas/product.schema'
+import type { CreateProductData } from '@/types/product.types'
 
-const initialFormData: ProductFormData = {
+const defaultValues: ProductFormSchema = {
   name_en: '',
   name_mm: '',
   category_id: '',
@@ -14,60 +17,37 @@ const initialFormData: ProductFormData = {
 
 export function useProductForm() {
   const router = useRouter()
-  const [formData, setFormData] = useState<ProductFormData>(initialFormData)
-  const [errors, setErrors] = useState<ProductFormErrors>({})
   const [loading, setLoading] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const validateForm = (): boolean => {
-    const newErrors: ProductFormErrors = {}
-
-    if (!formData.name_en.trim()) {
-      newErrors.name_en = 'English name is required'
-    }
-    if (!formData.name_mm.trim()) {
-      newErrors.name_mm = 'Myanmar name is required'
-    }
-    if (formData.base_price <= 0) {
-      newErrors.base_price = 'Base price must be greater than 0'
-    }
-    if (!formData.barcode.trim()) {
-      newErrors.barcode = 'Barcode is required'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const updateField = (field: keyof ProductFormData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear field error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
-    }
-  }
+  const form = useForm<ProductFormSchema>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues
+  })
 
   const handleGenerateBarcode = () => {
     const barcode = generateBarcode()
-    updateField('barcode', barcode)
+    form.setValue('barcode', barcode)
+    form.clearErrors('barcode')
   }
 
   const clearForm = () => {
-    setFormData(initialFormData)
-    setErrors({})
+    form.reset(defaultValues)
+    setSubmitError(null)
   }
 
-  const submitForm = async (): Promise<boolean> => {
-    if (!validateForm()) return false
-
+  const submitForm = async (data: ProductFormSchema): Promise<boolean> => {
     setLoading(true)
+    setSubmitError(null)
+
     try {
       const productData: CreateProductData = {
-        barcode: formData.barcode,
-        name_en: formData.name_en,
-        name_mm: formData.name_mm,
-        category_id: formData.category_id || null,
-        base_price: Number(formData.base_price),
-        expiry_date: formData.expiry_date || null
+        barcode: data.barcode,
+        name_en: data.name_en,
+        name_mm: data.name_mm,
+        category_id: data.category_id || null,
+        base_price: data.base_price,
+        expiry_date: data.expiry_date || null
       }
 
       await createProduct(productData)
@@ -77,9 +57,9 @@ export function useProductForm() {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create product'
       
       if (errorMessage.includes('barcode')) {
-        setErrors({ barcode: errorMessage })
+        form.setError('barcode', { message: errorMessage })
       } else {
-        setErrors({ general: errorMessage })
+        setSubmitError(errorMessage)
       }
       return false
     } finally {
@@ -88,10 +68,9 @@ export function useProductForm() {
   }
 
   return {
-    formData,
-    errors,
+    form,
     loading,
-    updateField,
+    submitError,
     generateBarcode: handleGenerateBarcode,
     clearForm,
     submitForm
