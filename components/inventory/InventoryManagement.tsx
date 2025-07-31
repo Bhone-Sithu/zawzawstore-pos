@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import ProductList from './ProductList'
+import ProductList from '../products/ProductList'
 import LowStockAlert from './LowStockAlert'
 import type { Product } from '@/types/database.types'
 import { Package, AlertTriangle, RefreshCw, Download, Plus, X } from 'lucide-react'

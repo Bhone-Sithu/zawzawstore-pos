@@ -107,7 +107,8 @@ export default function HomePage() {
               const isActive = index <= currentStep
               const isCompleted = index < currentStep
               return (
-                <div key={index} className="flex items-center">
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+<div key={index} className="flex items-center">
                   <div className={`
                     flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300
                     ${isActive ? 'bg-orange-500 text-white shadow-lg scale-110' : 'bg-gray-200 text-gray-500'}

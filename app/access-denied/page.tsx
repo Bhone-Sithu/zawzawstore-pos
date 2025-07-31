@@ -52,6 +52,7 @@ export default function AccessDeniedPage() {
                     <p className="text-sm font-medium text-gray-500 mb-1">User ID</p>
                     <div className="flex items-center gap-2 bg-white p-3 rounded-lg border border-gray-200">
                       <code className="text-sm font-mono text-gray-700 flex-1">{user.id}</code>
+                      {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
                       <button
                         onClick={() => copyToClipboard(user.id)}
                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -93,7 +94,8 @@ export default function AccessDeniedPage() {
                 </button>
               </SignOutButton>
 
-              <button
+              {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
+<button
                 onClick={() => window.location.reload()}
                 className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
