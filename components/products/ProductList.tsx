@@ -32,6 +32,7 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
   const [categories, setCategories] = useState<Category[]>([])
   const [showLowStock, setShowLowStock] = useState(false)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     fetchProducts()
     fetchCategories()
@@ -157,7 +158,9 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
         </div>
 
         {/* Products Table */}
-        <div className="border rounded-lg">
+        <Card>
+          <CardContent>
+        <div className="rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
@@ -237,6 +240,8 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
             </div>
           )}
         </div>
+        </CardContent>
+        </Card>
       </CardContent>
     </Card>
   )

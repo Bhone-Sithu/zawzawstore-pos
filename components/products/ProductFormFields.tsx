@@ -144,24 +144,6 @@ export default function ProductFormFields({
           )}
         />
 
-        {/* Expiry Date */}
-        <FormField
-          control={form.control}
-          name="expiry_date"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Expiry Date</FormLabel>
-              <FormControl>
-                <Input
-                  type="date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
     </div>
   )

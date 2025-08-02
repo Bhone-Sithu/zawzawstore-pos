@@ -23,18 +23,7 @@ export const productFormSchema = z.object({
   barcode: z
     .string()
     .min(1, 'Barcode is required')
-    .max(50, 'Barcode must be less than 50 characters'),
-  
-  expiry_date: z
-    .string()
-    .optional()
-    .refine((date) => {
-      if (!date) return true // Optional field
-      const parsedDate = new Date(date)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      return parsedDate >= today
-    }, 'Expiry date must be today or in the future')
+    .max(50, 'Barcode must be less than 50 characters')
 })
 
 export type ProductFormSchema = z.infer<typeof productFormSchema>

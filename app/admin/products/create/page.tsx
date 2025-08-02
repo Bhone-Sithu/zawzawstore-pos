@@ -1,6 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useProductForm } from '@/hooks/use-product-form'
@@ -9,19 +10,55 @@ import { Form } from '@/components/ui/form'
 import ProductFormFields from '@/components/products/ProductFormFields'
 import ImageUploadSection from '@/components/products/ImageUploadSection'
 import LoadingSpinner from '@/components/ui/loading-spinner'
+import { supabase } from '@/lib/supabase'
+import type { Product } from '@/types/database.types'
 
 export default function CreateProductPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editId = searchParams.get('edit')
+  const isEditMode = !!editId
+  
   const { isAuthorized, isLoading: authLoading } = useAuth('admin')
   const { categories } = useCategories()
+  const [editProduct, setEditProduct] = useState<Product | null>(null)
+  const [loadingProduct, setLoadingProduct] = useState(isEditMode)
+  
   const {
     form,
     loading,
     submitError,
+    imageFile,
+    setImageFile,
     generateBarcode,
     clearForm,
     submitForm
-  } = useProductForm()
+  } = useProductForm(editProduct)
+
+  // Load product for editing
+  useEffect(() => {
+    if (isEditMode && editId) {
+      const loadProduct = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', editId)
+            .single()
+
+          if (error) throw error
+          setEditProduct(data)
+        } catch (error) {
+          console.error('Error loading product:', error)
+          router.push('/admin/products')
+        } finally {
+          setLoadingProduct(false)
+        }
+      }
+
+      loadProduct()
+    }
+  }, [isEditMode, editId, router])
 
   const handleSubmit = form.handleSubmit(submitForm)
 
@@ -29,7 +66,7 @@ export default function CreateProductPage() {
     router.push('/admin/products')
   }
 
-  if (authLoading) {
+  if (authLoading || loadingProduct) {
     return <LoadingSpinner />
   }
 
@@ -52,7 +89,9 @@ export default function CreateProductPage() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Create Product</h2>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {isEditMode ? 'Edit Product' : 'Create Product'}
+              </h2>
             </div>
           </div>
 
@@ -78,7 +117,7 @@ export default function CreateProductPage() {
               disabled={loading}
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating...' : 'Create Product'}
+              {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Product' : 'Create Product')}
             </button>
           </div>
         </div>
@@ -96,7 +135,12 @@ export default function CreateProductPage() {
 
             {/* Upload Images */}
             <div className="lg:col-span-1">
-              <ImageUploadSection />
+              <ImageUploadSection 
+                file={imageFile}
+                existingImage={editProduct?.image}
+                onChange={setImageFile}
+                disabled={loading}
+              />
             </div>
           </form>
         </Form>

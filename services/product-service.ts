@@ -7,7 +7,6 @@ export async function createProduct(data: CreateProductData): Promise<Product> {
     ...data,
     is_active: true,
     category_id: data.category_id || null,
-    expiry_date: data.expiry_date || null,
     image: data.image || null
   }
 
@@ -22,6 +21,30 @@ export async function createProduct(data: CreateProductData): Promise<Product> {
       throw new Error('This barcode is already in use')
     }
     throw new Error('Failed to create product. Please try again.')
+  }
+
+  return product
+}
+
+export async function updateProduct(id: string, data: CreateProductData): Promise<Product> {
+  const productData = {
+    ...data,
+    category_id: data.category_id || null,
+    image: data.image || null
+  }
+
+  const { data: product, error } = await supabase
+    .from('products')
+    .update(productData)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    if (error.message?.includes('barcode')) {
+      throw new Error('This barcode is already in use')
+    }
+    throw new Error('Failed to update product. Please try again.')
   }
 
   return product

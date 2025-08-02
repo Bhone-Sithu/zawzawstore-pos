@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
 import { Loader2, Shuffle, AlertCircle } from 'lucide-react'
 
 interface ProductFormProps {
@@ -27,8 +26,7 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
     name_mm: '',
     image: '',
     category_id: '',
-    base_price: 0,
-    expiry_date: ''
+    base_price: 0
   })
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
@@ -44,8 +42,7 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
           name_mm: product.name_mm,
           image: product.image || '',
           category_id: product.category_id || '',
-          base_price: product.base_price,
-          expiry_date: product.expiry_date || ''
+          base_price: product.base_price
         })
       } else {
         setFormData({
@@ -54,8 +51,7 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
           name_mm: '',
           image: '',
           category_id: '',
-          base_price: 0,
-          expiry_date: ''
+          base_price: 0
         })
       }
       setErrors({})
@@ -106,7 +102,6 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
         ...formData,
         base_price: Number(formData.base_price),
         category_id: formData.category_id || null,
-        expiry_date: formData.expiry_date || null,
         image: formData.image || null
       }
 
@@ -289,26 +284,6 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
             </CardContent>
           </Card>
 
-          {/* Additional Information Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Additional Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="expiry_date">Expiry Date</Label>
-                <Input
-                  id="expiry_date"
-                  type="date"
-                  value={formData.expiry_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, expiry_date: e.target.value }))}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Optional: Set if the product has an expiry date
-                </p>
-              </div>
-            </CardContent>
-          </Card>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

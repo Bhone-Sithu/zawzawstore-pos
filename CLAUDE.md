@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Next.js 15 application built with TypeScript, React 19, and Tailwind CSS 4. It's a multi-branch retail POS system with role-based access control for Admin, Cashier, and Boss roles.
 
+## Theme
+
+This application is built with Tailwind CSS 4 and shadcn/ui components. The theme is light mode with a modern and clean design. The primary color is orange. As a POS system, the design should be simple and easy to use.
+
 ## How to write code
 
 Think like a senior software engineer and write code that is maintainable, readable, and scalable. Use React/NextJS best practices and write clean, concise, and efficient code.

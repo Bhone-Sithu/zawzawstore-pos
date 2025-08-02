@@ -1,29 +1,45 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { createProduct, generateBarcode } from '@/services/product-service'
+import { useState, useEffect } from 'react'
+import { createProduct, updateProduct, generateBarcode } from '@/services/product-service'
 import { productFormSchema, type ProductFormSchema } from '@/schemas/product.schema'
+import { uploadImageFile } from '@/lib/storage'
 import type { CreateProductData } from '@/types/product.types'
+import type { Product } from '@/types/database.types'
 
 const defaultValues: ProductFormSchema = {
   name_en: '',
   name_mm: '',
   category_id: '',
   base_price: 0,
-  expiry_date: '',
   barcode: ''
 }
 
-export function useProductForm() {
+export function useProductForm(editProduct?: Product | null) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const isEditMode = !!editProduct
 
   const form = useForm<ProductFormSchema>({
     resolver: zodResolver(productFormSchema),
     defaultValues
   })
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editProduct) {
+      form.reset({
+        name_en: editProduct.name_en,
+        name_mm: editProduct.name_mm,
+        category_id: editProduct.category_id || '',
+        base_price: editProduct.base_price,
+        barcode: editProduct.barcode
+      })
+    }
+  }, [editProduct, form])
 
   const handleGenerateBarcode = () => {
     const barcode = generateBarcode()
@@ -34,6 +50,7 @@ export function useProductForm() {
   const clearForm = () => {
     form.reset(defaultValues)
     setSubmitError(null)
+    setImageFile(null)
   }
 
   const submitForm = async (data: ProductFormSchema): Promise<boolean> => {
@@ -41,20 +58,38 @@ export function useProductForm() {
     setSubmitError(null)
 
     try {
+      let imageUrl: string | null = editProduct?.image || null
+
+      // Upload image if file was selected
+      if (imageFile) {
+        const result = await uploadImageFile(imageFile, 'products')
+        if (result.error) {
+          setSubmitError(result.error)
+          return false
+        }
+        imageUrl = result.url
+      }
+
       const productData: CreateProductData = {
         barcode: data.barcode,
         name_en: data.name_en,
         name_mm: data.name_mm,
         category_id: data.category_id || null,
         base_price: data.base_price,
-        expiry_date: data.expiry_date || null
+        image: imageUrl
       }
 
-      await createProduct(productData)
+      if (isEditMode && editProduct) {
+        await updateProduct(editProduct.id, productData)
+      } else {
+        await createProduct(productData)
+      }
+      
       router.push('/admin/products')
       return true
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create product'
+      const errorMessage = error instanceof Error ? error.message : 
+        isEditMode ? 'Failed to update product' : 'Failed to create product'
       
       if (errorMessage.includes('barcode')) {
         form.setError('barcode', { message: errorMessage })
@@ -71,6 +106,8 @@ export function useProductForm() {
     form,
     loading,
     submitError,
+    imageFile,
+    setImageFile,
     generateBarcode: handleGenerateBarcode,
     clearForm,
     submitForm
