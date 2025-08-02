@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ProductList from '../products/ProductList'
 import LowStockAlert from './LowStockAlert'
-import type { Product } from '@/types/database.types'
+import type { Product, ProductWithCategory } from '@/types/database.types'
 import { Package, AlertTriangle, RefreshCw, Download, Plus, X } from 'lucide-react'
 
 export default function InventoryManagement() {
@@ -21,8 +21,8 @@ export default function InventoryManagement() {
     router.push(`/admin/products/create?edit=${product.id}`)
   }
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+  const handleDeleteProduct = async (product: ProductWithCategory) => {
+    if (!confirm(`Are you sure you want to delete "${product.name_en}"? This action cannot be undone.`)) {
       return
     }
 
@@ -33,7 +33,7 @@ export default function InventoryManagement() {
       const { error } = await supabase
         .from('products')
         .update({ is_active: false })
-        .eq('id', productId)
+        .eq('id', product.id)
 
       if (error) throw error
 

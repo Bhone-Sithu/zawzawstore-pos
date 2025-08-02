@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import type { Product, Category } from '@/types/database.types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -142,9 +143,11 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
                 <TableRow key={product.id} className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
                   <TableCell className="py-4 px-4">
                     {product.image ? (
-                      <img 
+                      <Image 
                         src={product.image} 
                         alt={product.name_en}
+                        width={48}
+                        height={48}
                         className="w-12 h-12 object-cover rounded border border-gray-200"
                       />
                     ) : (
