@@ -149,6 +149,7 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
                         width={48}
                         height={48}
                         className="w-12 h-12 object-cover rounded border border-gray-200"
+                        unoptimized={true}
                       />
                     ) : (
                       <div className="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
