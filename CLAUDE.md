@@ -8,7 +8,7 @@ This is a Next.js 15 application built with TypeScript, React 19, and Tailwind C
 
 ## Theme
 
-This application is built with Tailwind CSS 4 and shadcn/ui components. The theme is light mode with a modern and clean design. The primary color is orange. As a POS system, the design should be simple and easy to use.
+This application is built with Tailwind CSS 4 and shadcn/ui components. The theme is light mode with a modern and clean design. The primary color is orange. As a POS system, the design should be simple and easy to use. And include cursor pointer in every click events.
 
 ## How to write code
 
