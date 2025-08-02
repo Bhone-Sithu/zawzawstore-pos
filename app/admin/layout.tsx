@@ -124,7 +124,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.firstName}</span>
+              <span className="text-sm text-gray-600">Welcome, {user?.username}</span>
               <SignOutButton>
                 <button 
                   type="button"
