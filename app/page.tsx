@@ -149,7 +149,7 @@ export default function HomePage() {
 
           {/* Loading Bar */}
           <div className="mt-6">
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
               <div 
                 className="bg-orange-500 h-2 rounded-full transition-all duration-1000 ease-out"
                 style={{ width: `${(currentStep + 1) * 33.33}%` }}
