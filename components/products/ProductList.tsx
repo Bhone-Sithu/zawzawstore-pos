@@ -5,12 +5,12 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import type { Product, Category } from '@/types/database.types'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { BarcodeInput } from '@/components/ui/barcode-input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Search, Edit, Trash2 } from 'lucide-react'
+import { Loader2, Edit, Trash2 } from 'lucide-react'
 
 interface ProductWithCategory extends Product {
   category?: Category
@@ -97,13 +97,15 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
       <CardContent className="space-y-4">
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 h-4 w-4" />
-            <Input
-              placeholder="Search by name, Myanmar name, or barcode..."
+          <div className="flex-1">
+            <BarcodeInput
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white placeholder:text-gray-600 cursor-pointer"
+              onChange={setSearchTerm}
+              placeholder="Search by name, Myanmar name, or scan/type barcode..."
+              className="w-full"
+              onScan={(barcode) => {
+                setSearchTerm(barcode)
+              }}
             />
           </div>
           

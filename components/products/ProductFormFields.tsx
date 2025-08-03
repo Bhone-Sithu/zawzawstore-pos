@@ -1,6 +1,7 @@
 import { Shuffle, FileText } from 'lucide-react'
 import type { UseFormReturn } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
+import { BarcodeInput } from '@/components/ui/barcode-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import type { Category } from '@/types/database.types'
@@ -124,16 +125,20 @@ export default function ProductFormFields({
               <FormLabel>Barcode *</FormLabel>
               <div className="flex gap-2">
                 <FormControl>
-                  <Input
-                    placeholder="Enter or generate barcode"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    {...field}
+                  <BarcodeInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Scan or type barcode..."
+                    className="flex-1"
+                    onScan={(barcode) => {
+                      field.onChange(barcode)
+                    }}
                   />
                 </FormControl>
                 <button
                   type="button"
                   onClick={onGenerateBarcode}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 cursor-pointer"
                 >
                   <Shuffle className="h-4 w-4" />
                   Generate
