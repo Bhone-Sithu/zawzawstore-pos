@@ -1,59 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import InventoryDashboard from './InventoryDashboard'
 import LowStockAlert from './LowStockAlert'
 import AddInventoryDialog from './AddInventoryDialog'
-import type { Product, ProductWithCategory } from '@/types/database.types'
-import { Package, AlertTriangle, RefreshCw, Download, Plus, X, PackagePlus } from 'lucide-react'
+import { Package, AlertTriangle, Download, X, PackagePlus } from 'lucide-react'
 
 export default function InventoryManagement() {
-  const router = useRouter()
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [activeTab, setActiveTab] = useState<'products' | 'alerts'>('products')
   const [showAddInventory, setShowAddInventory] = useState(false)
 
-  const handleAddProduct = () => {
-    router.push('/admin/products/create')
-  }
-
-  const handleEditProduct = (product: Product) => {
-    // For now, redirect to create page - we can create an edit page later
-    router.push(`/admin/products/create?edit=${product.id}`)
-  }
-
-  const handleDeleteProduct = async (product: ProductWithCategory) => {
-    if (!confirm(`Are you sure you want to delete "${product.name_en}"? This action cannot be undone.`)) {
-      return
-    }
-
-    try {
-      const { supabase } = await import('@/lib/supabase')
-      
-      // Soft delete - set is_active to false
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: false })
-        .eq('id', product.id)
-
-      if (error) throw error
-
-      // Refresh the product list
-      setRefreshTrigger(prev => prev + 1)
-    } catch (error) {
-      console.error('Error deleting product:', error)
-      alert('Failed to delete product. Please try again.')
-    }
-  }
-
-
-  const refreshData = () => {
-    setRefreshTrigger(prev => prev + 1)
-  }
-
   const handleInventorySuccess = () => {
-    refreshData()
     setShowAddInventory(false)
   }
 
@@ -78,7 +35,7 @@ export default function InventoryManagement() {
       </div>
 
       {/* Low Stock Alert - Always visible if there are alerts */}
-      <LowStockAlert onRefresh={refreshData} />
+      <LowStockAlert />
 
       {/* Navigation Tabs */}
       <div className="bg-white rounded-lg shadow">
@@ -182,7 +139,7 @@ export default function InventoryManagement() {
               </div>
 
               {/* Detailed Low Stock Alert */}
-              <LowStockAlert onRefresh={refreshData} />
+              <LowStockAlert />
             </div>
           )}
         </div>

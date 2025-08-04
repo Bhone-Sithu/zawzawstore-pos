@@ -9,9 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Input } from '@/components/ui/input'
 import { BarcodeInput } from '@/components/ui/barcode-input'
-import { Package, TrendingUp, AlertTriangle, X, Search, RefreshCw, Edit } from 'lucide-react'
+import { Package, TrendingUp, AlertTriangle, X, RefreshCw, Edit } from 'lucide-react'
 import Image from 'next/image'
 
 interface InventoryDashboardProps {
@@ -19,16 +18,19 @@ interface InventoryDashboardProps {
 }
 
 export default function InventoryDashboard({ selectedBranchId }: InventoryDashboardProps) {
-  const { inventory, stats, loading, error, refetch, updateQuantity } = useInventory(selectedBranchId)
+  const { inventory, stats, loading, error, refetch } = useInventory(selectedBranchId)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterBranch, setFilterBranch] = useState<string>('all')
   const [filterStock, setFilterStock] = useState<string>('all') // all, low, out
 
   const filteredInventory = inventory.filter(item => {
+    // Skip items with missing product data
+    if (!item.product) return false
+
     const matchesSearch = 
-      item.product.name_en.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.product.name_mm.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.product.barcode.includes(searchTerm)
+      item.product.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.product.name_mm?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.product.barcode?.includes(searchTerm)
 
     const matchesBranch = filterBranch === 'all' || item.branch_id === filterBranch
 
@@ -207,8 +209,11 @@ export default function InventoryDashboard({ selectedBranchId }: InventoryDashbo
               </TableHeader>
               <TableBody>
                 {filteredInventory.map((item, index) => {
+                  // Skip rendering if product data is missing
+                  if (!item.product) return null
+
                   const stockStatus = getStockStatus(item.quantity)
-                  const currentPrice = item.price || item.product.base_price
+                  const currentPrice = item.price || item.product?.base_price || 0
                   const value = item.quantity * currentPrice
 
                   return (
@@ -230,17 +235,17 @@ export default function InventoryDashboard({ selectedBranchId }: InventoryDashbo
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-gray-900">{item.product.name_en}</p>
-                            <p className="text-sm text-gray-600">{item.product.name_mm}</p>
-                            <p className="text-xs text-gray-500">{item.product.barcode}</p>
+                            <p className="font-medium text-gray-900">{item.product.name_en || 'Unknown Product'}</p>
+                            <p className="text-sm text-gray-600">{item.product.name_mm || '-'}</p>
+                            <p className="text-xs text-gray-500">{item.product.barcode || 'No barcode'}</p>
                           </div>
                         </div>
                       </TableCell>
                       
                       <TableCell className="py-4 px-4">
                         <div>
-                          <p className="font-medium text-gray-900">{item.branch.name}</p>
-                          <p className="text-sm text-gray-600">{item.branch.location}</p>
+                          <p className="font-medium text-gray-900">{item.branch?.name || 'Unknown Branch'}</p>
+                          <p className="text-sm text-gray-600">{item.branch?.location || '-'}</p>
                         </div>
                       </TableCell>
                       
@@ -255,7 +260,7 @@ export default function InventoryDashboard({ selectedBranchId }: InventoryDashbo
                       
                       <TableCell className="py-4 px-4">
                         <p className="font-medium">{formatCurrency(currentPrice)}</p>
-                        {item.price !== item.product.base_price && (
+                        {item.price && item.product?.base_price && item.price !== item.product.base_price && (
                           <p className="text-xs text-gray-500">Base: {formatCurrency(item.product.base_price)}</p>
                         )}
                       </TableCell>

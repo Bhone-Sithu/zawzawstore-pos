@@ -17,6 +17,7 @@ export async function fetchInventory(branchId?: string): Promise<{ data: Invento
           name_mm,
           image,
           base_price,
+          is_active,
           category:categories(
             id,
             name_en,
@@ -29,7 +30,6 @@ export async function fetchInventory(branchId?: string): Promise<{ data: Invento
           location
         )
       `)
-      .eq('product.is_active', true)
       .order('updated_at', { ascending: false })
 
     if (branchId) {
@@ -40,7 +40,12 @@ export async function fetchInventory(branchId?: string): Promise<{ data: Invento
 
     if (error) throw error
 
-    return { data: data as InventoryItem[], error: null }
+    // Filter out inventory items with inactive or missing products
+    const filteredData = (data || []).filter(item => 
+      item.product && item.product.is_active === true
+    )
+
+    return { data: filteredData as InventoryItem[], error: null }
   } catch (err) {
     console.error('Error fetching inventory:', err)
     return { 
@@ -214,7 +219,9 @@ export async function getLowStockItems(threshold: number = 3): Promise<{ data: I
           name_mm,
           image,
           base_price,
-          is_active
+          is_active,
+          created_at,
+          updated_at
         ),
         branch:branches(
           id,
@@ -257,6 +264,7 @@ export async function searchInventory(
           name_mm,
           image,
           base_price,
+          is_active,
           category:categories(
             id,
             name_en,
@@ -269,8 +277,6 @@ export async function searchInventory(
           location
         )
       `)
-      .eq('product.is_active', true)
-
     if (branchId) {
       query = query.eq('branch_id', branchId)
     }
@@ -282,7 +288,12 @@ export async function searchInventory(
 
     if (error) throw error
 
-    return { data: data as InventoryItem[], error: null }
+    // Filter out inventory items with inactive or missing products
+    const filteredData = (data || []).filter(item => 
+      item.product && item.product.is_active === true
+    )
+
+    return { data: filteredData as InventoryItem[], error: null }
   } catch (err) {
     console.error('Error searching inventory:', err)
     return { 

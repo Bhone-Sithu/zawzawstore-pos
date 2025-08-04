@@ -50,7 +50,8 @@ export default function AddInventoryForm({ onSuccess, onCancel, selectedBranchId
       setSearchResults([])
       setSelectedProduct(null)
     }
-  }, [searchTerm])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, branchId])
 
   const fetchBranches = async () => {
     try {

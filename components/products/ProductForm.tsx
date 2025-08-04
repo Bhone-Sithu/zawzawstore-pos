@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Shuffle, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 
 interface ProductFormProps {
   product?: Product | null
@@ -26,7 +26,7 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
     name_mm: '',
     image: '',
     category_id: '',
-    base_price: 0
+    base_price: ''
   })
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
@@ -42,7 +42,7 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
           name_mm: product.name_mm,
           image: product.image || '',
           category_id: product.category_id || '',
-          base_price: product.base_price
+          base_price: product.base_price.toString()
         })
       } else {
         setFormData({
@@ -51,7 +51,7 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
           name_mm: '',
           image: '',
           category_id: '',
-          base_price: 0
+          base_price: ''
         })
       }
       setErrors({})
@@ -72,12 +72,6 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
     }
   }
 
-  const generateBarcode = () => {
-    const timestamp = Date.now().toString().slice(-8)
-    const random = Math.random().toString().slice(-4)
-    const barcode = timestamp + random
-    setFormData(prev => ({ ...prev, barcode }))
-  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -85,7 +79,10 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
     if (!formData.barcode.trim()) newErrors.barcode = 'Barcode is required'
     if (!formData.name_en.trim()) newErrors.name_en = 'English name is required'
     if (!formData.name_mm.trim()) newErrors.name_mm = 'Myanmar name is required' 
-    if (formData.base_price <= 0) newErrors.base_price = 'Base price must be greater than 0'
+    const basePrice = Number.parseFloat(formData.base_price)
+    if (!formData.base_price || isNaN(basePrice) || basePrice <= 0) {
+      newErrors.base_price = 'Base price must be greater than 0'
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -100,7 +97,7 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
     try {
       const productData = {
         ...formData,
-        base_price: Number(formData.base_price),
+        base_price: Number.parseFloat(formData.base_price),
         category_id: formData.category_id || null,
         image: formData.image || null
       }
@@ -163,23 +160,13 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
               {/* Barcode */}
               <div className="space-y-2">
                 <Label htmlFor="barcode">Barcode *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="barcode"
-                    value={formData.barcode}
-                    onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
-                    placeholder="Enter or generate barcode"
-                    className={errors.barcode ? 'border-destructive' : ''}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={generateBarcode}
-                    className="shrink-0"
-                  >
-                    <Shuffle className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Input
+                  id="barcode"
+                  value={formData.barcode}
+                  onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
+                  placeholder="Enter barcode"
+                  className={errors.barcode ? 'border-destructive' : ''}
+                />
                 {errors.barcode && (
                   <p className="text-sm text-destructive">{errors.barcode}</p>
                 )}
@@ -270,8 +257,8 @@ export default function ProductForm({ product, isOpen, onClose, onSave }: Produc
                   step="0.01"
                   min="0"
                   value={formData.base_price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, base_price: Number.parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
+                  onChange={(e) => setFormData(prev => ({ ...prev, base_price: e.target.value }))}
+                  placeholder="Enter price (e.g., 10.50)"
                   className={errors.base_price ? 'border-destructive' : ''}
                 />
                 {errors.base_price && (

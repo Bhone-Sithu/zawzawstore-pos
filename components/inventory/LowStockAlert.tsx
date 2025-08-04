@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import * as inventoryService from '@/services/inventory-service'
 import type { Product } from '@/types/database.types'
-import type { InventoryItem } from '@/types/inventory.types'
 import { CheckCircle, AlertTriangle, RefreshCw, ChevronDown } from 'lucide-react'
 
 interface LowStockProduct extends Product {
@@ -49,7 +48,8 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
         
         if (!productMap.has(productId)) {
           productMap.set(productId, {
-            ...inv.product,
+            ...(inv.product as Product),
+            image: inv.product.image || '',
             total_stock: 0,
             inventory_by_branch: []
           })

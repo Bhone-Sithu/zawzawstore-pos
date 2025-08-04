@@ -1,4 +1,4 @@
-import { Shuffle, FileText } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import type { UseFormReturn } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { BarcodeInput } from '@/components/ui/barcode-input'
@@ -10,13 +10,11 @@ import type { ProductFormSchema } from '@/schemas/product.schema'
 interface ProductFormFieldsProps {
   form: UseFormReturn<ProductFormSchema>
   categories: Category[]
-  onGenerateBarcode: () => void
 }
 
 export default function ProductFormFields({
   form,
-  categories,
-  onGenerateBarcode
+  categories
 }: ProductFormFieldsProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -105,10 +103,14 @@ export default function ProductFormFields({
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="0.00"
+                  placeholder="Enter price (e.g., 10.50)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                  value={field.value === 0 ? '' : field.value}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    field.onChange(value === '' ? 0 : Number(value) || 0)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -123,27 +125,17 @@ export default function ProductFormFields({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Barcode *</FormLabel>
-              <div className="flex gap-2">
-                <FormControl>
-                  <BarcodeInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Scan or type barcode..."
-                    className="flex-1"
-                    onScan={(barcode) => {
-                      field.onChange(barcode)
-                    }}
-                  />
-                </FormControl>
-                <button
-                  type="button"
-                  onClick={onGenerateBarcode}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 cursor-pointer"
-                >
-                  <Shuffle className="h-4 w-4" />
-                  Generate
-                </button>
-              </div>
+              <FormControl>
+                <BarcodeInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Scan or type barcode..."
+                  className="w-full"
+                  onScan={(barcode) => {
+                    field.onChange(barcode)
+                  }}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
