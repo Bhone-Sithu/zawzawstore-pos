@@ -30,6 +30,7 @@ export default function CreateProductPage() {
     submitError,
     imageFile,
     setImageFile,
+    generateBarcode,
     clearForm,
     submitForm
   } = useProductForm(editProduct)
@@ -128,6 +129,7 @@ export default function CreateProductPage() {
               <ProductFormFields
                 form={form}
                 categories={categories}
+                onGenerateBarcode={generateBarcode}
               />
             </div>
 

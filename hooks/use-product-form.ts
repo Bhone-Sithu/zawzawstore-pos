@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { createProduct, updateProduct } from '@/services/product-service'
+import { createProduct, updateProduct, generateBarcode } from '@/services/product-service'
 import { productFormSchema, type ProductFormSchema } from '@/schemas/product.schema'
 import { uploadImageFile } from '@/lib/storage'
 import type { CreateProductData } from '@/types/product.types'
@@ -41,6 +41,11 @@ export function useProductForm(editProduct?: Product | null) {
     }
   }, [editProduct, form])
 
+  const handleGenerateBarcode = () => {
+    const barcode = generateBarcode()
+    form.setValue('barcode', barcode)
+    form.clearErrors('barcode')
+  }
 
   const clearForm = () => {
     form.reset(defaultValues)
@@ -103,6 +108,7 @@ export function useProductForm(editProduct?: Product | null) {
     submitError,
     imageFile,
     setImageFile,
+    generateBarcode: handleGenerateBarcode,
     clearForm,
     submitForm
   }

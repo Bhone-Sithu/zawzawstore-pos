@@ -63,3 +63,8 @@ export async function fetchCategories(): Promise<Category[]> {
   return data || []
 }
 
+export function generateBarcode(): string {
+  const timestamp = Date.now().toString().slice(-8)
+  const random = Math.random().toString().slice(-4)
+  return timestamp + random
+}
