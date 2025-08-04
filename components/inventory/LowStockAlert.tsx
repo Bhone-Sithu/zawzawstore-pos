@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import * as inventoryService from '@/services/inventory-service'
 import type { Product } from '@/types/database.types'
+import type { InventoryItem } from '@/types/inventory.types'
 import { CheckCircle, AlertTriangle, RefreshCw, ChevronDown } from 'lucide-react'
 
 interface LowStockProduct extends Product {
@@ -31,45 +32,39 @@ export default function LowStockAlert({ onRefresh }: LowStockAlertProps) {
     try {
       setLoading(true)
       
-      // Fetch products with their inventory across all branches
-      const { data: productsData, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          inventory!inner(
-            quantity,
-            branch:branches(
-              name,
-              location
-            )
-          )
-        `)
-        .eq('is_active', true)
+      const { data: inventoryData, error } = await inventoryService.getLowStockItems(3)
 
-      if (error) throw error
-
-      // Process products to calculate total stock and filter low stock items
-      const processedProducts: LowStockProduct[] = []
-
-      for (const product of productsData || []) {
-        const totalStock = product.inventory.reduce((sum: number, inv: { quantity: number }) => sum + inv.quantity, 0)
-        
-        if (totalStock <= product.low_stock_threshold) {
-          const inventoryByBranch = product.inventory.map((inv: { quantity: number; branch: { name: string; location: string } }) => ({
-            branch_name: inv.branch.name,
-            branch_location: inv.branch.location,
-            quantity: inv.quantity
-          }))
-
-          processedProducts.push({
-            ...product,
-            total_stock: totalStock,
-            inventory_by_branch: inventoryByBranch
-          })
-        }
+      if (error) {
+        console.error('Error fetching low stock products:', error)
+        return
       }
 
-      setLowStockProducts(processedProducts)
+      if (!inventoryData) return
+
+      // Group inventory by product to calculate totals
+      const productMap = new Map<string, LowStockProduct>()
+
+      for (const inv of inventoryData) {
+        const productId = inv.product.id
+        
+        if (!productMap.has(productId)) {
+          productMap.set(productId, {
+            ...inv.product,
+            total_stock: 0,
+            inventory_by_branch: []
+          })
+        }
+
+        const product = productMap.get(productId)!
+        product.total_stock += inv.quantity
+        product.inventory_by_branch.push({
+          branch_name: inv.branch.name,
+          branch_location: inv.branch.location,
+          quantity: inv.quantity
+        })
+      }
+
+      setLowStockProducts(Array.from(productMap.values()))
     } catch (error) {
       console.error('Error fetching low stock products:', error)
     } finally {

@@ -59,7 +59,8 @@ export interface Inventory {
   product_id: string
   branch_id: string
   quantity: number
-  price: number //Optional
+  price?: number
+  expiry_date?: string
   updated_at: string
 }
 

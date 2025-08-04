@@ -6,7 +6,8 @@ ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
 -- Create custom types
 CREATE TYPE user_role AS ENUM ('admin', 'cashier', 'boss');
 CREATE TYPE transaction_status AS ENUM ('pending', 'completed', 'cancelled');
-CREATE TYPE transfer_status AS ENUM ('pending', 'in_transit', 'completed', 'cancelled');
+CREATE TYPE transfer_status AS ENUM ('pending', 'approved', 'in_transit', 'completed', 'cancelled');
+CREATE TYPE stock_adjustment_reason AS ENUM ('received', 'damaged', 'expired', 'theft', 'sold', 'transfer_out', 'transfer_in', 'adjustment', 'return');
 
 -- Branches table
 CREATE TABLE branches (
@@ -51,7 +52,6 @@ CREATE TABLE products (
     image TEXT,
     category_id UUID REFERENCES categories(id),
     base_price DECIMAL(10,2) NOT NULL,
-    expiry_date DATE,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -64,6 +64,7 @@ CREATE TABLE inventory (
     branch_id UUID REFERENCES branches(id) ON DELETE CASCADE,
     quantity INTEGER NOT NULL DEFAULT 0,
     price DECIMAL(10,2),
+    expiry_date DATE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(product_id, branch_id)
 );

@@ -2,15 +2,17 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import ProductList from '../products/ProductList'
+import InventoryDashboard from './InventoryDashboard'
 import LowStockAlert from './LowStockAlert'
+import AddInventoryDialog from './AddInventoryDialog'
 import type { Product, ProductWithCategory } from '@/types/database.types'
-import { Package, AlertTriangle, RefreshCw, Download, Plus, X } from 'lucide-react'
+import { Package, AlertTriangle, RefreshCw, Download, Plus, X, PackagePlus } from 'lucide-react'
 
 export default function InventoryManagement() {
   const router = useRouter()
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [activeTab, setActiveTab] = useState<'products' | 'alerts'>('products')
+  const [showAddInventory, setShowAddInventory] = useState(false)
 
   const handleAddProduct = () => {
     router.push('/admin/products/create')
@@ -50,6 +52,11 @@ export default function InventoryManagement() {
     setRefreshTrigger(prev => prev + 1)
   }
 
+  const handleInventorySuccess = () => {
+    refreshData()
+    setShowAddInventory(false)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -58,14 +65,16 @@ export default function InventoryManagement() {
           <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
           <p className="text-gray-600">Manage products, track stock levels, and monitor alerts</p>
         </div>
-        <button
-          type="button"
-          onClick={handleAddProduct}
-          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-medium flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add Product
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAddInventory(true)}
+            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-medium flex items-center gap-2 cursor-pointer"
+          >
+            <PackagePlus className="h-4 w-4" />
+            Add Inventory
+          </button>
+        </div>
       </div>
 
       {/* Low Stock Alert - Always visible if there are alerts */}
@@ -78,19 +87,19 @@ export default function InventoryManagement() {
             <button
               type="button"
               onClick={() => setActiveTab('products')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer ${
                 activeTab === 'products'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               <Package className="h-4 w-4" />
-              All Products
+              Inventory Overview
             </button>
             <button
               type="button" 
               onClick={() => setActiveTab('alerts')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 cursor-pointer ${
                 activeTab === 'alerts'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -106,23 +115,15 @@ export default function InventoryManagement() {
           {activeTab === 'products' && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Product Catalog</h2>
+                <h2 className="text-lg font-medium text-gray-900">Inventory Dashboard</h2>
                 <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    onClick={refreshData}
-                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center gap-2"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    Refresh
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
                       // Export functionality would go here
-                      console.log('Export products')
+                      console.log('Export inventory')
                     }}
-                    className="px-3 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center gap-2"
+                    className="px-3 py-2 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center gap-2 cursor-pointer"
                   >
                     <Download className="h-4 w-4" />
                     Export
@@ -130,11 +131,7 @@ export default function InventoryManagement() {
                 </div>
               </div>
               
-              <ProductList
-                onEditProduct={handleEditProduct}
-                onDeleteProduct={handleDeleteProduct}
-                refreshTrigger={refreshTrigger}
-              />
+              <InventoryDashboard />
             </div>
           )}
 
@@ -190,6 +187,13 @@ export default function InventoryManagement() {
           )}
         </div>
       </div>
+
+      {/* Add Inventory Dialog */}
+      <AddInventoryDialog
+        isOpen={showAddInventory}
+        onClose={() => setShowAddInventory(false)}
+        onSuccess={handleInventorySuccess}
+      />
 
     </div>
   )
