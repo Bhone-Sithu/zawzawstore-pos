@@ -74,7 +74,7 @@ export default function ProductFormFields({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Category *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-400 focus:border-orange-400">
                     <SelectValue placeholder="Select Category" />
@@ -92,6 +92,34 @@ export default function ProductFormFields({
             </FormItem>
             )}
           />
+
+        {/* Supplier Price */}
+        <FormField
+          control={form.control}
+          name="supplier_price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Supplier Price (RM)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Enter supplier price (e.g., 8.50)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  {...field}
+                  value={field.value === 0 ? '' : field.value}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    field.onChange(value === '' ? 0 : Number(value) || 0)
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+              <p className="text-sm text-gray-500">Optional: The price you pay to your supplier for this product</p>
+            </FormItem>
+          )}
+        />
 
         {/* Base Price */}
         <FormField

@@ -51,6 +51,7 @@ CREATE TABLE products (
     name_mm VARCHAR(200) NOT NULL,
     image TEXT,
     category_id UUID REFERENCES categories(id),
+    supplier_price DECIMAL(10,2),
     base_price DECIMAL(10,2) NOT NULL,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

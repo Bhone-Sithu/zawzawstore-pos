@@ -15,6 +15,12 @@ export const productFormSchema = z.object({
     .string()
     .min(1, 'Category is required'),
   
+  supplier_price: z
+    .number()
+    .min(0, 'Supplier price must be 0 or greater')
+    .max(999999.99, 'Supplier price is too high')
+    .optional(),
+  
   base_price: z
     .number()
     .min(0.01, 'Base price must be greater than 0')

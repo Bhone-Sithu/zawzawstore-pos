@@ -60,6 +60,7 @@ export default function CreateProductPage() {
     }
   }, [isEditMode, editId, router])
 
+
   const handleSubmit = form.handleSubmit(submitForm)
 
   const handleCancel = () => {

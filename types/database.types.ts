@@ -40,7 +40,8 @@ export interface Product {
   name_mm: string
   image: string
   category_id?: string
-  base_price : number
+  supplier_price?: number
+  base_price: number
   expiry_date?: string
   is_active: boolean
   created_at: string

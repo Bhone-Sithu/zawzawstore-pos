@@ -68,3 +68,73 @@ export function generateBarcode(): string {
   const random = Math.random().toString().slice(-4)
   return timestamp + random
 }
+
+export interface ProductWithCategory extends Product {
+  category?: Category
+}
+
+export interface ProductFilters {
+  searchTerm?: string
+  categoryId?: string
+}
+
+export interface PaginatedProductsResult {
+  products: ProductWithCategory[]
+  totalCount: number
+  totalPages: number
+}
+
+export async function fetchProductsPaginated(
+  page: number = 1,
+  itemsPerPage: number = 10,
+  filters: ProductFilters = {}
+): Promise<PaginatedProductsResult> {
+  let query = supabase
+    .from('products')
+    .select(`
+      *,
+      category:categories(*)
+    `, { count: 'exact' })
+    .eq('is_active', true)
+
+  // Apply search filter
+  if (filters.searchTerm) {
+    query = query.or(`name_en.ilike.%${filters.searchTerm}%,name_mm.ilike.%${filters.searchTerm}%,barcode.ilike.%${filters.searchTerm}%`)
+  }
+
+  // Apply category filter
+  if (filters.categoryId && filters.categoryId !== 'all') {
+    query = query.eq('category_id', filters.categoryId)
+  }
+
+  // Add pagination
+  const from = (page - 1) * itemsPerPage
+  const to = from + itemsPerPage - 1
+
+  const { data, error, count } = await query
+    .order('name_en')
+    .range(from, to)
+
+  if (error) {
+    throw new Error('Failed to fetch products')
+  }
+
+  const totalPages = Math.ceil((count || 0) / itemsPerPage)
+
+  return {
+    products: data || [],
+    totalCount: count || 0,
+    totalPages
+  }
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('products')
+    .update({ is_active: false })
+    .eq('id', id)
+
+  if (error) {
+    throw new Error('Failed to delete product')
+  }
+}

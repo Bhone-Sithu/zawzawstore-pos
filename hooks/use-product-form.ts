@@ -12,6 +12,7 @@ const defaultValues: ProductFormSchema = {
   name_en: '',
   name_mm: '',
   category_id: '',
+  supplier_price: 0,
   base_price: 0,
   barcode: ''
 }
@@ -35,6 +36,7 @@ export function useProductForm(editProduct?: Product | null) {
         name_en: editProduct.name_en,
         name_mm: editProduct.name_mm,
         category_id: editProduct.category_id || '',
+        supplier_price: editProduct.supplier_price || 0,
         base_price: editProduct.base_price,
         barcode: editProduct.barcode
       })
@@ -75,6 +77,7 @@ export function useProductForm(editProduct?: Product | null) {
         name_en: data.name_en,
         name_mm: data.name_mm,
         category_id: data.category_id || null,
+        supplier_price: data.supplier_price || null,
         base_price: data.base_price,
         image: imageUrl
       }
