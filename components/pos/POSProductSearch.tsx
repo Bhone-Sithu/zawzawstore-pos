@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BarcodeInput } from '@/components/ui/barcode-input'
 import { useProductsPagination } from '@/hooks/use-products-pagination'
-import { Plus, Search, ShoppingCart } from 'lucide-react'
+import { Plus, Search, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface POSProductSearchProps {
   onAddToCart: (product: {
@@ -27,6 +27,12 @@ export default function POSProductSearch({ onAddToCart }: POSProductSearchProps)
     loading,
     searchInput,
     filterCategory,
+    currentPage,
+    totalPages,
+    totalCount,
+    showingFrom,
+    showingTo,
+    setCurrentPage,
     setSearchInput,
     setFilterCategory,
     handleSearch,
@@ -129,69 +135,127 @@ export default function POSProductSearch({ onAddToCart }: POSProductSearchProps)
             <p className="text-sm">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
-            {products.map(product => (
-              <div
-                key={product.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 group flex flex-col h-full"
-              >
-                {/* Product Image */}
-                <div className="aspect-square mb-3 bg-gray-50 rounded-lg overflow-hidden">
-                  {product.image ? (
-                    <Image
-                      src={product.image}
-                      alt={product.name_en}
-                      width={200}
-                      height={200}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      unoptimized={true}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ShoppingCart className="h-12 w-12 text-gray-300" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Product Info */}
-                <div className="flex flex-col h-full">
-                  <div className="flex-1 space-y-2">
-                    <h3 className="font-medium text-gray-900 line-clamp-2 min-h-[1.5em]">
-                      {product.name_en}
-                    </h3>
-                    <p className="text-sm text-gray-600 line-clamp-1 min-h-[2em]">
-                      {product.name_mm}
-                    </p>
-                    
-                    {/* Category & Price */}
-                    <div className="flex flex-col items-start justify-between gap-2 min-h-[3rem]">
-                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0">
-                        {product.category?.name_en || 'No Category'}
-                      </Badge>
-                      <div className="text-left">
-                        <p className="text-lg font-bold text-orange-600">
-                          RM {product.base_price.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-gray-500 break-all">
-                          ID: {product.barcode}
-                        </p>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+              {products.map(product => (
+                <div
+                  key={product.id}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 group flex flex-col h-full"
+                >
+                  {/* Product Image */}
+                  <div className="aspect-square mb-3 bg-gray-50 rounded-lg overflow-hidden">
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name_en}
+                        width={200}
+                        height={200}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        unoptimized={true}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ShoppingCart className="h-12 w-12 text-gray-300" />
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Add to Cart Button - Always at bottom */}
+                  {/* Product Info */}
+                  <div className="flex flex-col h-full">
+                    <div className="flex-1 space-y-2">
+                      <h3 className="font-medium text-gray-900 line-clamp-2 min-h-[1.5em]">
+                        {product.name_en}
+                      </h3>
+                      <p className="text-sm text-gray-600 line-clamp-1 min-h-[2em]">
+                        {product.name_mm}
+                      </p>
+                      
+                      {/* Category & Price */}
+                      <div className="flex flex-col items-start justify-between gap-2 min-h-[3rem]">
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0">
+                          {product.category?.name_en || 'No Category'}
+                        </Badge>
+                        <div className="text-left">
+                          <p className="text-lg font-bold text-orange-600">
+                            RM {product.base_price.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-500 break-all">
+                            ID: {product.barcode}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add to Cart Button - Always at bottom */}
+                    <Button
+                      onClick={() => handleProductAdd(product)}
+                      className="w-full h-10 !bg-orange-500 hover:!bg-orange-600 focus:!bg-orange-600 active:!bg-orange-700 !text-white cursor-pointer transition-colors duration-200 !border-0"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add to Cart
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4">
+                <div className="text-sm text-gray-600">
+                  Showing {showingFrom} to {showingTo} of {totalCount} products
+                </div>
+                
+                <div className="flex items-center gap-2">
                   <Button
-                    onClick={() => handleProductAdd(product)}
-                    className="w-full h-10 !bg-orange-500 hover:!bg-orange-600 focus:!bg-orange-600 active:!bg-orange-700 !text-white cursor-pointer transition-colors duration-200 !border-0"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                    variant="outline"
                     size="sm"
+                    className="cursor-pointer"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add to Cart
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNum = Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i
+                      if (pageNum > totalPages) return null
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          variant={currentPage === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          className={`cursor-pointer ${
+                            currentPage === pageNum
+                              ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                              : 'hover:bg-orange-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  
+                  <Button
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

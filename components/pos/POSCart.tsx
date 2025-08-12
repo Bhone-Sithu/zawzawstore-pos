@@ -33,7 +33,7 @@ export default function POSCart({
   
   if (items.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+      <div className="h-full flex flex-col items-center justify-center text-gray-500">
         <ShoppingCart className="h-16 w-16 mb-4 text-gray-300" />
         <p className="text-lg font-medium">Cart is empty</p>
         <p className="text-sm">Add products to get started</p>
@@ -47,7 +47,7 @@ export default function POSCart({
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex flex-col">
       {/* Cart Header */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-600">
@@ -64,8 +64,9 @@ export default function POSCart({
         </Button>
       </div>
 
-      {/* Cart Items */}
-      <div className="flex-1 overflow-y-auto space-y-3">
+      {/* Cart Items - Limited to 5 items with scroll */}
+      <div className="overflow-y-auto space-y-3 pr-2 max-h-[400px]"
+           style={{ scrollbarWidth: 'thin' }}>
         {items.map(item => (
           <div key={item.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
             <div className="flex items-start gap-3">

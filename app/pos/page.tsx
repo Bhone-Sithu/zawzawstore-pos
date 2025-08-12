@@ -134,7 +134,7 @@ export default function POSPage() {
 
           {/* Right Side - Cart & Checkout */}
           <div className="flex flex-col">
-            <Card className="flex-1 flex flex-col">
+            <Card className="flex flex-col">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center justify-between text-xl">
                   <div className="flex items-center gap-2">
@@ -146,18 +146,20 @@ export default function POSPage() {
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <POSCart
-                  items={cartItems}
-                  onUpdateQuantity={updateQuantity}
-                  onRemoveItem={removeFromCart}
-                  onClearCart={clearCart}
-                />
+              <CardContent className="flex flex-col">
+                {/* Cart Items - Limited height with scroll */}
+                <div className="mb-4">
+                  <POSCart
+                    items={cartItems}
+                    onUpdateQuantity={updateQuantity}
+                    onRemoveItem={removeFromCart}
+                    onClearCart={clearCart}
+                  />
+                </div>
                 
-                {/* Totals */}
-                <div className="mt-auto pt-4">
-                  <Separator className="mb-4" />
-                  <div className="space-y-2">
+                {/* Totals & Checkout - At bottom of cart */}
+                <div className="pt-4 border-t">
+                  <div className="space-y-2 mb-4">
                     <div className="flex justify-between text-base">
                       <span>Subtotal:</span>
                       <span>RM {subtotal.toFixed(2)}</span>
@@ -177,7 +179,7 @@ export default function POSPage() {
                   <Button
                     onClick={processPayment}
                     disabled={cartItems.length === 0 || isProcessingPayment}
-                    className="w-full mt-4 h-14 text-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
+                    className="w-full h-14 text-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
                     size="lg"
                   >
                     {isProcessingPayment ? (
