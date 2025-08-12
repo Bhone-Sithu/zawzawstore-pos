@@ -8,6 +8,8 @@ export function useAuth(requiredRole: 'admin' | 'cashier' | 'boss') {
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [branchId, setBranchId] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   useEffect(() => {
     const checkPermissions = async () => {
@@ -16,7 +18,7 @@ export function useAuth(requiredRole: 'admin' | 'cashier' | 'boss') {
       try {
         const { data: userData, error } = await supabase
           .from('users')
-          .select('role')
+          .select('role, branch_id')
           .eq('clerk_id', user.id)
           .eq('is_active', true)
           .single()
@@ -28,6 +30,8 @@ export function useAuth(requiredRole: 'admin' | 'cashier' | 'boss') {
         }
 
         setIsAuthorized(true)
+        setBranchId(userData.branch_id)
+        setUserRole(userData.role)
       } catch (error) {
         console.error('Error checking permissions:', error)
         setIsAuthorized(false)
@@ -43,6 +47,8 @@ export function useAuth(requiredRole: 'admin' | 'cashier' | 'boss') {
   return {
     isAuthorized,
     isLoading: !isLoaded || isLoading,
-    user
+    user,
+    branchId,
+    userRole
   }
 }

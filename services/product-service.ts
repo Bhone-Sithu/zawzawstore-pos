@@ -73,6 +73,11 @@ export interface ProductWithCategory extends Product {
   category?: Category
 }
 
+export interface ProductWithInventory extends ProductWithCategory {
+  stock?: number
+  branch_id?: string
+}
+
 export interface ProductFilters {
   searchTerm?: string
   categoryId?: string
@@ -80,6 +85,12 @@ export interface ProductFilters {
 
 export interface PaginatedProductsResult {
   products: ProductWithCategory[]
+  totalCount: number
+  totalPages: number
+}
+
+export interface PaginatedPOSProductsResult {
+  products: ProductWithInventory[]
   totalCount: number
   totalPages: number
 }
@@ -136,5 +147,141 @@ export async function deleteProduct(id: string): Promise<void> {
 
   if (error) {
     throw new Error('Failed to delete product')
+  }
+}
+
+// POS-specific function to fetch products with inventory data for a specific branch
+export async function fetchPOSProductsPaginated(
+  branchId: string,
+  page: number = 1,
+  itemsPerPage: number = 10,
+  filters: ProductFilters = {}
+): Promise<PaginatedPOSProductsResult> {
+  let query = supabase
+    .from('inventory')
+    .select(`
+      quantity,
+      products!inner(
+        id,
+        barcode,
+        name_en,
+        name_mm,
+        image,
+        base_price,
+        supplier_price,
+        is_active,
+        category_id,
+        created_at,
+        updated_at,
+        categories(
+          id,
+          name_en,
+          name_mm
+        )
+      )
+    `, { count: 'exact' })
+    .eq('branch_id', branchId)
+    .eq('products.is_active', true)
+
+  // Apply category filter
+  if (filters.categoryId && filters.categoryId !== 'all') {
+    query = query.eq('products.category_id', filters.categoryId)
+  }
+
+  // Apply search filter
+  if (filters.searchTerm && filters.searchTerm.trim()) {
+    const searchTerm = filters.searchTerm.trim()
+    query = query.or(`products.name_en.ilike.%${searchTerm}%,products.name_mm.ilike.%${searchTerm}%,products.barcode.ilike.%${searchTerm}%`)
+  }
+
+  // Add pagination
+  const offset = (page - 1) * itemsPerPage
+  query = query.range(offset, offset + itemsPerPage - 1)
+
+  // Order by product name
+  query = query.order('name_en', { foreignTable: 'products' })
+
+  const { data, error, count } = await query
+
+  if (error) {
+    throw new Error('Failed to fetch POS products')
+  }
+
+  // Transform data to match ProductWithInventory interface
+  const productsWithInventory: ProductWithInventory[] = (data || []).map((item: any) => ({
+    id: item.products.id,
+    barcode: item.products.barcode,
+    name_en: item.products.name_en,
+    name_mm: item.products.name_mm,
+    image: item.products.image,
+    category_id: item.products.category_id,
+    supplier_price: item.products.supplier_price,
+    base_price: item.products.base_price,
+    is_active: item.products.is_active,
+    created_at: item.products.created_at,
+    updated_at: item.products.updated_at,
+    category: item.products.categories,
+    stock: item.quantity,
+    branch_id: branchId
+  }))
+
+  const totalPages = Math.ceil((count || 0) / itemsPerPage)
+
+  return {
+    products: productsWithInventory,
+    totalCount: count || 0,
+    totalPages
+  }
+}
+
+// Get product with current stock for POS
+export async function getPOSProductByBarcode(barcode: string, branchId: string): Promise<ProductWithInventory | null> {
+  const { data, error } = await supabase
+    .from('inventory')
+    .select(`
+      quantity,
+      products!inner(
+        id,
+        barcode,
+        name_en,
+        name_mm,
+        image,
+        base_price,
+        supplier_price,
+        is_active,
+        category_id,
+        created_at,
+        updated_at,
+        categories(
+          id,
+          name_en,
+          name_mm
+        )
+      )
+    `)
+    .eq('branch_id', branchId)
+    .eq('products.barcode', barcode)
+    .eq('products.is_active', true)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return {
+    id: (data as any).products.id,
+    barcode: (data as any).products.barcode,
+    name_en: (data as any).products.name_en,
+    name_mm: (data as any).products.name_mm,
+    image: (data as any).products.image,
+    category_id: (data as any).products.category_id,
+    supplier_price: (data as any).products.supplier_price,
+    base_price: (data as any).products.base_price,
+    is_active: (data as any).products.is_active,
+    created_at: (data as any).products.created_at,
+    updated_at: (data as any).products.updated_at,
+    category: (data as any).products.categories,
+    stock: (data as any).quantity,
+    branch_id: branchId
   }
 }

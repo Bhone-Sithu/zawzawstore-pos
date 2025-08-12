@@ -11,7 +11,9 @@ import POSProductSearch from '@/components/pos/POSProductSearch'
 import POSCart from '@/components/pos/POSCart'
 import POSHeader from '@/components/pos/POSHeader'
 import POSStats from '@/components/pos/POSStats'
-import { ShoppingCart, Package, DollarSign } from 'lucide-react'
+import { createTransaction } from '@/services/transaction-service'
+import { supabase } from '@/lib/supabase'
+import { ShoppingCart, DollarSign } from 'lucide-react'
 
 interface CartItem {
   id: string
@@ -25,7 +27,7 @@ interface CartItem {
 }
 
 export default function POSPage() {
-  const { isAuthorized, isLoading } = useAuth('cashier')
+  const { isAuthorized, isLoading, branchId, user } = useAuth('cashier')
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
@@ -40,10 +42,22 @@ export default function POSPage() {
     stock?: number
     price?: number
   }) => {
+    // Don't add if no stock
+    if (!product.stock || product.stock <= 0) {
+      alert('This item is out of stock!')
+      return
+    }
+
     setCartItems(prev => {
       const existingItem = prev.find(item => item.id === product.id)
       
       if (existingItem) {
+        // Check if we can add more (don't exceed available stock)
+        if (existingItem.quantity >= existingItem.stock) {
+          alert(`Only ${existingItem.stock} items available in stock!`)
+          return prev
+        }
+        
         return prev.map(item =>
           item.id === product.id
             ? { ...item, quantity: Math.min(item.quantity + 1, item.stock) }
@@ -71,11 +85,17 @@ export default function POSPage() {
     }
 
     setCartItems(prev =>
-      prev.map(item =>
-        item.id === itemId
-          ? { ...item, quantity: Math.min(newQuantity, item.stock) }
-          : item
-      )
+      prev.map(item => {
+        if (item.id === itemId) {
+          // Don't allow quantity to exceed stock
+          const validQuantity = Math.min(newQuantity, item.stock)
+          if (newQuantity > item.stock) {
+            alert(`Only ${item.stock} items available in stock!`)
+          }
+          return { ...item, quantity: validQuantity }
+        }
+        return item
+      })
     )
   }
 
@@ -94,13 +114,51 @@ export default function POSPage() {
   const total = subtotal + tax
 
   const processPayment = async () => {
+    if (!branchId || !user || cartItems.length === 0) {
+      alert('Unable to process payment. Please try again.')
+      return
+    }
+
     setIsProcessingPayment(true)
     try {
-      // TODO: Implement actual payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate processing
+      // Get cashier ID from database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('clerk_id', user.id)
+        .single()
+
+      if (userError || !userData) {
+        throw new Error('Unable to find cashier information')
+      }
+
+      // Prepare transaction data
+      const transactionData = {
+        branch_id: branchId,
+        cashier_id: userData.id,
+        subtotal,
+        tax_amount: tax,
+        discount_amount: 0,
+        total_amount: total,
+        payment_method: 'cash', // Default to cash for now
+        items: cartItems.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity
+        }))
+      }
+
+      // Create transaction
+      const transaction = await createTransaction(transactionData)
+      
+      // Success! Clear cart and show success message
       clearCart()
+      alert(`Payment successful! Transaction #${transaction.transaction_number}`)
+      
     } catch (error) {
       console.error('Payment processing error:', error)
+      alert(`Payment failed: ${error instanceof Error ? error.message : 'Unknown error occurred'}`)
     } finally {
       setIsProcessingPayment(false)
     }
@@ -127,7 +185,7 @@ export default function POSPage() {
           <div className="lg:col-span-2 flex flex-col">
             <Card className="flex-1 flex flex-col">
               <CardContent className="flex-1 flex flex-col">
-                <POSProductSearch onAddToCart={addToCart} />
+                {branchId && <POSProductSearch branchId={branchId} onAddToCart={addToCart} />}
               </CardContent>
             </Card>
           </div>

@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react'
 import { Input } from './input'
-import { Button } from './button'
 import { Scan } from 'lucide-react'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 

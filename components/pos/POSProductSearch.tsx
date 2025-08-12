@@ -4,10 +4,11 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BarcodeInput } from '@/components/ui/barcode-input'
-import { useProductsPagination } from '@/hooks/use-products-pagination'
-import { Plus, Search, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react'
+import { usePOSProducts } from '@/hooks/use-pos-products'
+import { Plus, Search, ShoppingCart, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
 
 interface POSProductSearchProps {
+  branchId: string
   onAddToCart: (product: {
     id: string
     barcode: string
@@ -20,7 +21,7 @@ interface POSProductSearchProps {
   }) => void
 }
 
-export default function POSProductSearch({ onAddToCart }: POSProductSearchProps) {
+export default function POSProductSearch({ branchId, onAddToCart }: POSProductSearchProps) {
   const {
     products,
     categories,
@@ -36,8 +37,9 @@ export default function POSProductSearch({ onAddToCart }: POSProductSearchProps)
     setSearchInput,
     setFilterCategory,
     handleSearch,
-    clearSearch
-  } = useProductsPagination()
+    clearSearch,
+    getProductByBarcode
+  } = usePOSProducts(branchId)
 
   const handleProductAdd = (product: {
     id: string
@@ -46,13 +48,35 @@ export default function POSProductSearch({ onAddToCart }: POSProductSearchProps)
     name_mm: string
     base_price: number
     image?: string
+    stock?: number
     category?: { name_en: string }
   }) => {
+    // Don't add if no stock available
+    if (!product.stock || product.stock <= 0) {
+      return
+    }
+
     onAddToCart({
       ...product,
-      stock: 50, // TODO: Get actual stock from inventory
+      stock: product.stock,
       price: product.base_price
     })
+  }
+
+  // Handle barcode scan
+  const handleBarcodeSearch = async (barcode: string) => {
+    if (!barcode.trim()) return
+    
+    try {
+      const product = await getProductByBarcode(barcode)
+      if (product) {
+        handleProductAdd(product)
+        // Clear the search after successful scan
+        clearSearch()
+      }
+    } catch (error) {
+      console.error('Error searching product by barcode:', error)
+    }
   }
 
   return (
@@ -66,9 +90,7 @@ export default function POSProductSearch({ onAddToCart }: POSProductSearchProps)
               onChange={setSearchInput}
               placeholder="Search products or scan barcode..."
               className="h-12 text-lg"
-              onScan={(barcode) => {
-                handleSearch(barcode)
-              }}
+              onScan={handleBarcodeSearch}
             />
           </div>
           <Button 
@@ -179,9 +201,25 @@ export default function POSProductSearch({ onAddToCart }: POSProductSearchProps)
                           <p className="text-lg font-bold text-orange-600">
                             RM {product.base_price.toFixed(2)}
                           </p>
-                          <p className="text-xs text-gray-500 break-all">
+                          <p className="text-xs text-gray-500 break-all mb-1">
                             ID: {product.barcode}
                           </p>
+                          <div className="flex items-center gap-1">
+                            {product.stock && product.stock > 0 ? (
+                              <Badge variant="outline" className={`text-xs ${
+                                product.stock <= 3 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'
+                              }`}>
+                                Stock: {product.stock}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600 border-gray-300">
+                                Out of Stock
+                              </Badge>
+                            )}
+                            {product.stock && product.stock <= 3 && product.stock > 0 && (
+                              <AlertTriangle className="h-3 w-3 text-red-500" />
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -189,11 +227,16 @@ export default function POSProductSearch({ onAddToCart }: POSProductSearchProps)
                     {/* Add to Cart Button - Always at bottom */}
                     <Button
                       onClick={() => handleProductAdd(product)}
-                      className="w-full h-10 !bg-orange-500 hover:!bg-orange-600 focus:!bg-orange-600 active:!bg-orange-700 !text-white cursor-pointer transition-colors duration-200 !border-0"
+                      disabled={!product.stock || product.stock <= 0}
+                      className={`w-full h-10 transition-colors duration-200 !border-0 ${
+                        !product.stock || product.stock <= 0
+                          ? '!bg-gray-300 !text-gray-500 cursor-not-allowed'
+                          : '!bg-orange-500 hover:!bg-orange-600 focus:!bg-orange-600 active:!bg-orange-700 !text-white cursor-pointer'
+                      }`}
                       size="sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add to Cart
+                      {!product.stock || product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
                     </Button>
                   </div>
                 </div>
