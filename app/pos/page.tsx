@@ -1,215 +1,206 @@
 'use client'
 
-import { useUser, SignOutButton } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Camera, DollarSign, ShoppingCart, Clock } from 'lucide-react'
+import { useState } from 'react'
+import { useAuth } from '@/hooks/use-auth'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import LoadingSpinner from '@/components/ui/loading-spinner'
+import POSProductSearch from '@/components/pos/POSProductSearch'
+import POSCart from '@/components/pos/POSCart'
+import POSHeader from '@/components/pos/POSHeader'
+import POSStats from '@/components/pos/POSStats'
+import { ShoppingCart, Package, DollarSign } from 'lucide-react'
 
-export default function POSDashboard() {
-  const { user, isLoaded } = useUser()
-  const router = useRouter()
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
+interface CartItem {
+  id: string
+  barcode: string
+  name_en: string
+  name_mm: string
+  price: number
+  quantity: number
+  stock: number
+  image?: string
+}
 
-  useEffect(() => {
-    const checkPermissions = async () => {
-      if (!isLoaded || !user) return
+export default function POSPage() {
+  const { isAuthorized, isLoading } = useAuth('cashier')
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
-      try {
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('role')
-          .eq('clerk_id', user.id)
-          .eq('is_active', true)
-          .single()
-
-        if (error || !userData || userData.role !== 'cashier') {
-          setIsAuthorized(false)
-          router.push('/access-denied')
-          return
-        }
-
-        setIsAuthorized(true)
-      } catch (error) {
-        console.error('Error checking permissions:', error)
-        setIsAuthorized(false)
-        router.push('/access-denied')
+  // Cart management functions
+  const addToCart = (product: {
+    id: string
+    barcode: string
+    name_en: string
+    name_mm: string
+    base_price: number
+    image?: string
+    stock?: number
+    price?: number
+  }) => {
+    setCartItems(prev => {
+      const existingItem = prev.find(item => item.id === product.id)
+      
+      if (existingItem) {
+        return prev.map(item =>
+          item.id === product.id
+            ? { ...item, quantity: Math.min(item.quantity + 1, item.stock) }
+            : item
+        )
       }
+      
+      return [...prev, {
+        id: product.id,
+        barcode: product.barcode,
+        name_en: product.name_en,
+        name_mm: product.name_mm,
+        price: product.price || product.base_price,
+        quantity: 1,
+        stock: product.stock || 0,
+        image: product.image
+      }]
+    })
+  }
+
+  const updateQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeFromCart(itemId)
+      return
     }
 
-    checkPermissions()
-  }, [user, isLoaded, router])
-
-  if (!isLoaded || isAuthorized === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
+    setCartItems(prev =>
+      prev.map(item =>
+        item.id === itemId
+          ? { ...item, quantity: Math.min(newQuantity, item.stock) }
+          : item
+      )
     )
   }
 
+  const removeFromCart = (itemId: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== itemId))
+  }
+
+  const clearCart = () => {
+    setCartItems([])
+  }
+
+  // Calculate totals
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const taxRate = 0.06 // 6% tax
+  const tax = subtotal * taxRate
+  const total = subtotal + tax
+
+  const processPayment = async () => {
+    setIsProcessingPayment(true)
+    try {
+      // TODO: Implement actual payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate processing
+      clearCart()
+    } catch (error) {
+      console.error('Payment processing error:', error)
+    } finally {
+      setIsProcessingPayment(false)
+    }
+  }
+
+  if (isLoading) {
+    return <LoadingSpinner />
+  }
+
   if (!isAuthorized) {
-    return null // Will redirect to access-denied
+    return null
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
-                ZawZaw Store - Cashier POS
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.firstName}</span>
-              <SignOutButton>
-                <button 
-                  type="button"
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700"
-                >
-                  Sign Out
-                </button>
-              </SignOutButton>
-            </div>
+      {/* Header */}
+      <POSHeader />
+
+      {/* Main POS Interface */}
+      <div className="p-4 max-w-[1400px] mx-auto flex flex-col h-[calc(100vh-80px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 mb-6">
+          
+          {/* Left Side - Product Search & Selection */}
+          <div className="lg:col-span-2 flex flex-col">
+            <Card className="flex-1 flex flex-col">
+              <CardContent className="flex-1 flex flex-col">
+                <POSProductSearch onAddToCart={addToCart} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Side - Cart & Checkout */}
+          <div className="flex flex-col">
+            <Card className="flex-1 flex flex-col">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center justify-between text-xl">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="h-6 w-6 text-orange-600" />
+                    Shopping Cart
+                  </div>
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                    {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <POSCart
+                  items={cartItems}
+                  onUpdateQuantity={updateQuantity}
+                  onRemoveItem={removeFromCart}
+                  onClearCart={clearCart}
+                />
+                
+                {/* Totals */}
+                <div className="mt-auto pt-4">
+                  <Separator className="mb-4" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-base">
+                      <span>Subtotal:</span>
+                      <span>RM {subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-base">
+                      <span>Tax (6%):</span>
+                      <span>RM {tax.toFixed(2)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-xl font-bold">
+                      <span>Total:</span>
+                      <span className="text-orange-600">RM {total.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Payment Button */}
+                  <Button
+                    onClick={processPayment}
+                    disabled={cartItems.length === 0 || isProcessingPayment}
+                    className="w-full mt-4 h-14 text-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
+                    size="lg"
+                  >
+                    {isProcessingPayment ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <DollarSign className="h-5 w-5 mr-2" />
+                        Process Payment
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </nav>
 
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Product Search & Scan */}
-            <div className="lg:col-span-2 bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Product Search</h3>
-              <div className="space-y-4">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    placeholder="Search by product name or scan barcode..."
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-900"
-                  />
-                  <button 
-                    type="button"
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    <Camera className="h-4 w-4 inline mr-1" />Scan
-                  </button>
-                </div>
-                
-                {/* Sample Product List */}
-                <div className="border rounded-lg">
-                  <div className="p-4 border-b bg-gray-50">
-                    <h4 className="text-sm font-medium text-gray-900">Available Products</h4>
-                  </div>
-                  <div className="p-4 space-y-2">
-                    <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                      <div>
-                        <p className="font-medium text-gray-900">Coca Cola 330ml</p>
-                        <p className="text-sm text-gray-900">Barcode: 123456789</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">RM 2.50</p>
-                        <p className="text-sm text-gray-900">Stock: 45</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                      <div>
-                        <p className="font-medium text-gray-900">Bread Loaf</p>
-                        <p className="text-sm text-gray-900">Barcode: 987654321</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">RM 3.20</p>
-                        <p className="text-sm text-gray-900">Stock: 12</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Shopping Cart */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Shopping Cart</h3>
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4">
-                  <p className="text-center text-gray-500">Cart is empty</p>
-                </div>
-                
-                <div className="space-y-2 pt-4 border-t">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>RM 0.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax (6%):</span>
-                    <span>RM 0.00</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-lg border-t pt-2">
-                    <span>Total:</span>
-                    <span>RM 0.00</span>
-                  </div>
-                </div>
-
-                <button 
-                  type="button"
-                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-medium"
-                  disabled
-                >
-                  <ShoppingCart className="h-4 w-4 inline mr-2" />Process Payment
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                    <DollarSign className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                <div className="ml-5">
-                  <p className="text-sm font-medium text-gray-500">Today&apos;s Sales</p>
-                  <p className="text-lg font-medium text-gray-900">RM 1,247.50</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                    <ShoppingCart className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                <div className="ml-5">
-                  <p className="text-sm font-medium text-gray-500">Transactions</p>
-                  <p className="text-lg font-medium text-gray-900">23</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                    <Clock className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                <div className="ml-5">
-                  <p className="text-sm font-medium text-gray-500">Shift Hours</p>
-                  <p className="text-lg font-medium text-gray-900">6.5h</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Bottom Stats - Fixed at bottom */}
+        <div className="flex-shrink-0">
+          <POSStats />
         </div>
       </div>
     </div>

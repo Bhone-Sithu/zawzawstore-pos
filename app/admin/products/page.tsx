@@ -99,7 +99,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto  py-6">
+      <main className="max-w-7xl mx-auto ">
           <div className="p-6">
             <ProductList
               onEditProduct={handleEditProduct}
