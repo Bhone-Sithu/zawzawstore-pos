@@ -15,11 +15,13 @@ interface CartItem {
   quantity: number
   stock: number
   image?: string
+  customPrice?: boolean
 }
 
 interface POSCartProps {
   items: CartItem[]
   onUpdateQuantity: (itemId: string, quantity: number) => void
+  onUpdatePrice: (itemId: string, price: number) => void
   onRemoveItem: (itemId: string) => void
   onClearCart: () => void
 }
@@ -27,6 +29,7 @@ interface POSCartProps {
 export default function POSCart({ 
   items, 
   onUpdateQuantity, 
+  onUpdatePrice,
   onRemoveItem, 
   onClearCart 
 }: POSCartProps) {
@@ -44,6 +47,20 @@ export default function POSCart({
   const handleQuantityChange = (itemId: string, newQuantity: string) => {
     const quantity = parseInt(newQuantity) || 0
     onUpdateQuantity(itemId, quantity)
+  }
+
+  const handlePriceChange = (itemId: string, newPrice: string) => {
+    // Allow empty string to clear the field
+    if (newPrice === '') {
+      onUpdatePrice(itemId, 0)
+      return
+    }
+    
+    const price = parseFloat(newPrice)
+    // Only update if it's a valid number
+    if (!isNaN(price) && price >= 0) {
+      onUpdatePrice(itemId, price)
+    }
   }
 
   return (
@@ -102,9 +119,24 @@ export default function POSCart({
                 
                 {/* Price */}
                 <div className="flex items-center justify-between mt-2">
-                  <p className="text-sm font-bold text-orange-600">
-                    RM {item.price.toFixed(2)}
-                  </p>
+                  {item.customPrice ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">RM</span>
+                      <Input
+                        type="number"
+                        value={item.price === 0 ? '' : item.price.toString()}
+                        onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className="w-20 h-6 text-sm text-orange-600 font-bold border-orange-200 focus:border-orange-400"
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-sm font-bold text-orange-600">
+                      RM {item.price.toFixed(2)}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500">
                     Stock: {item.stock}
                   </p>

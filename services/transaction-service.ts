@@ -11,6 +11,7 @@ export interface CreateTransactionData {
   discount_amount: number
   total_amount: number
   payment_method: string
+  staff_checkout?: boolean
   items: Array<{
     product_id: string
     quantity: number
@@ -50,6 +51,7 @@ export async function createTransaction(data: CreateTransactionData): Promise<Tr
         discount_amount: data.discount_amount,
         total_amount: data.total_amount,
         payment_method: data.payment_method,
+        staff_checkout: data.staff_checkout || false,
         status: 'completed'
       }])
       .select()

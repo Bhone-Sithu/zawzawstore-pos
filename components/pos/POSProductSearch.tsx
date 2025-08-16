@@ -9,6 +9,7 @@ import { Plus, Search, ShoppingCart, ChevronLeft, ChevronRight, AlertTriangle } 
 
 interface POSProductSearchProps {
   branchId: string
+  refreshTrigger?: number
   onAddToCart: (product: {
     id: string
     barcode: string
@@ -18,10 +19,11 @@ interface POSProductSearchProps {
     image?: string
     stock?: number
     price?: number
+    category?: { custom_price: boolean }
   }) => void
 }
 
-export default function POSProductSearch({ branchId, onAddToCart }: POSProductSearchProps) {
+export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddToCart }: POSProductSearchProps) {
   const {
     products,
     categories,
@@ -39,7 +41,7 @@ export default function POSProductSearch({ branchId, onAddToCart }: POSProductSe
     handleSearch,
     clearSearch,
     getProductByBarcode
-  } = usePOSProducts(branchId)
+  } = usePOSProducts(branchId, refreshTrigger)
 
   const handleProductAdd = (product: {
     id: string
@@ -49,7 +51,7 @@ export default function POSProductSearch({ branchId, onAddToCart }: POSProductSe
     base_price: number
     image?: string
     stock?: number
-    category?: { name_en: string }
+    category?: { name_en: string; custom_price: boolean }
   }) => {
     // Don't add if no stock available
     if (!product.stock || product.stock <= 0) {
@@ -59,7 +61,8 @@ export default function POSProductSearch({ branchId, onAddToCart }: POSProductSe
     onAddToCart({
       ...product,
       stock: product.stock,
-      price: product.base_price
+      price: product.base_price,
+      category: product.category ? { custom_price: product.category.custom_price } : undefined
     })
   }
 
