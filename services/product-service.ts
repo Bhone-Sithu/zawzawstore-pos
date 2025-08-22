@@ -176,7 +176,8 @@ export async function fetchPOSProductsPaginated(
         categories(
           id,
           name_en,
-          name_mm
+          name_mm,
+          custom_price
         )
       )
     `, { count: 'exact' })
@@ -255,7 +256,8 @@ export async function getPOSProductByBarcode(barcode: string, branchId: string):
         categories(
           id,
           name_en,
-          name_mm
+          name_mm,
+          custom_price
         )
       )
     `)

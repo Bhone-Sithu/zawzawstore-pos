@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Checkbox } from '@/components/ui/checkbox'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import POSProductSearch from '@/components/pos/POSProductSearch'
 import POSCart from '@/components/pos/POSCart'
@@ -24,12 +25,15 @@ interface CartItem {
   quantity: number
   stock: number
   image?: string
+  customPrice?: boolean
 }
 
 export default function POSPage() {
   const { isAuthorized, isLoading, branchId, user } = useAuth('cashier')
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [isStaffCheckout, setIsStaffCheckout] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // Cart management functions
   const addToCart = (product: {
@@ -41,6 +45,7 @@ export default function POSPage() {
     image?: string
     stock?: number
     price?: number
+    category?: { custom_price: boolean }
   }) => {
     // Don't add if no stock
     if (!product.stock || product.stock <= 0) {
@@ -73,7 +78,8 @@ export default function POSPage() {
         price: product.price || product.base_price,
         quantity: 1,
         stock: product.stock || 0,
-        image: product.image
+        image: product.image,
+        customPrice: product.category?.custom_price || false
       }]
     })
   }
@@ -93,6 +99,19 @@ export default function POSPage() {
             alert(`Only ${item.stock} items available in stock!`)
           }
           return { ...item, quantity: validQuantity }
+        }
+        return item
+      })
+    )
+  }
+
+  const updatePrice = (itemId: string, newPrice: number) => {
+    if (newPrice < 0) return
+
+    setCartItems(prev =>
+      prev.map(item => {
+        if (item.id === itemId && item.customPrice) {
+          return { ...item, price: newPrice }
         }
         return item
       })
@@ -141,6 +160,7 @@ export default function POSPage() {
         discount_amount: 0,
         total_amount: total,
         payment_method: 'cash', // Default to cash for now
+        staff_checkout: isStaffCheckout,
         items: cartItems.map(item => ({
           product_id: item.id,
           quantity: item.quantity,
@@ -154,7 +174,11 @@ export default function POSPage() {
       
       // Success! Clear cart and show success message
       clearCart()
-      alert(`Payment successful! Transaction #${transaction.transaction_number}`)
+      setIsStaffCheckout(false)
+      // Refresh product list to update stock quantities
+      setRefreshTrigger(prev => prev + 1)
+      const checkoutType = isStaffCheckout ? 'Staff' : 'Customer'
+      alert(`${checkoutType} payment successful! Transaction #${transaction.transaction_number}`)
       
     } catch (error) {
       console.error('Payment processing error:', error)
@@ -185,7 +209,7 @@ export default function POSPage() {
           <div className="lg:col-span-2 flex flex-col">
             <Card className="flex-1 flex flex-col">
               <CardContent className="flex-1 flex flex-col">
-                {branchId && <POSProductSearch branchId={branchId} onAddToCart={addToCart} />}
+                {branchId && <POSProductSearch branchId={branchId} onAddToCart={addToCart} refreshTrigger={refreshTrigger} />}
               </CardContent>
             </Card>
           </div>
@@ -210,6 +234,7 @@ export default function POSPage() {
                   <POSCart
                     items={cartItems}
                     onUpdateQuantity={updateQuantity}
+                    onUpdatePrice={updatePrice}
                     onRemoveItem={removeFromCart}
                     onClearCart={clearCart}
                   />
@@ -237,7 +262,7 @@ export default function POSPage() {
                   <Button
                     onClick={processPayment}
                     disabled={cartItems.length === 0 || isProcessingPayment}
-                    className="w-full h-14 text-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
+                    className="w-full h-14 text-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer mb-4"
                     size="lg"
                   >
                     {isProcessingPayment ? (
@@ -252,6 +277,41 @@ export default function POSPage() {
                       </>
                     )}
                   </Button>
+
+                  {/* Staff Checkout Toggle - Below main button */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer" onClick={() => setIsStaffCheckout(!isStaffCheckout)}>
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="staff-checkout"
+                          checked={isStaffCheckout}
+                          onCheckedChange={(checked: boolean) => setIsStaffCheckout(checked)}
+                          className="h-5 w-5 cursor-pointer border-2 border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                        />
+                        <div>
+                          <label 
+                            htmlFor="staff-checkout" 
+                            className="text-sm font-semibold text-blue-800 cursor-pointer"
+                          >
+                            Staff Checkout Mode
+                          </label>
+                          <p className="text-xs text-blue-600">
+                            {isStaffCheckout ? 'Processing as staff purchase' : 'Click to enable staff checkout'}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant={isStaffCheckout ? "default" : "outline"} 
+                        className={`text-sm px-3 py-1 font-medium ${
+                          isStaffCheckout 
+                            ? 'bg-blue-600 text-white border-blue-600' 
+                            : 'bg-white text-blue-600 border-blue-300'
+                        }`}
+                      >
+                        {isStaffCheckout ? 'STAFF' : 'CUSTOMER'}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

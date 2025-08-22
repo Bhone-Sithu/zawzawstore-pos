@@ -41,7 +41,8 @@ CREATE TABLE categories (
     name_mm VARCHAR(100) NOT NULL,
     custom_price BOOLEAN DEFAULT false,
     description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    custom_price BOOLEAN DEFAULT false,
 );
 
 -- Products table
@@ -108,7 +109,8 @@ CREATE TABLE transactions (
     total_amount DECIMAL(10,2) NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
     status transaction_status DEFAULT 'completed',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    staff_checkout BOOLEAN DEFAULT false,
 );
 
 -- Transaction items

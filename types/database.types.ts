@@ -30,6 +30,7 @@ export interface Category {
   name_en: string
   name_mm: string
   description?: string
+  custom_price: boolean
   created_at: string
 }
 
@@ -78,6 +79,7 @@ export interface Transaction {
   total_amount: number
   payment_method: string
   status: TransactionStatus
+  staff_checkout: boolean
   created_at: string
 }
 
