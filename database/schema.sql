@@ -39,6 +39,7 @@ CREATE TABLE categories (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name_en VARCHAR(100) NOT NULL,
     name_mm VARCHAR(100) NOT NULL,
+    custom_price BOOLEAN DEFAULT false,
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
