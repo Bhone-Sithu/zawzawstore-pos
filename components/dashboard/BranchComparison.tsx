@@ -23,12 +23,12 @@ export function BranchComparison({ data, isLoading, chartType = 'bar' }: BranchC
     }).format(amount)
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="text-sm font-medium text-gray-900 mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.name === 'Transactions' ? entry.value : formatCurrency(entry.value)}
             </p>
@@ -39,7 +39,7 @@ export function BranchComparison({ data, isLoading, chartType = 'bar' }: BranchC
     return null
   }
 
-  const CustomPieTooltip = ({ active, payload }: any) => {
+  const CustomPieTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: BranchSales }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
@@ -132,7 +132,7 @@ export function BranchComparison({ data, isLoading, chartType = 'bar' }: BranchC
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    label={({ name, percent }: { name?: string; percent?: number }) => `${name || ''} (${percent ? (percent * 100).toFixed(0) : 0}%)`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="revenue"

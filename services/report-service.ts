@@ -319,7 +319,7 @@ export class ReportService {
         branchSales: Object.values(branchSales),
         categorySales: Object.values(categorySales),
         paymentMethods: Object.values(paymentMethods),
-        dailySales: Object.values(dailySales).sort((a: any, b: any) => a.date.localeCompare(b.date)),
+        dailySales: (Object.values(dailySales) as DailySales[]).sort((a, b) => a.date.localeCompare(b.date)),
         staffPerformance: Object.values(staffPerformance),
         period,
         dateRange: {

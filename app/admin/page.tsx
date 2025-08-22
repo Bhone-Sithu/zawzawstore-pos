@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
 import { ReportService, SalesDashboardData, SalesPeriod } from '@/services/report-service'
 import { SalesMetrics } from '@/components/dashboard/SalesMetrics'
 import { RevenueChart } from '@/components/dashboard/RevenueChart'
@@ -16,7 +15,6 @@ import { BarChart3, TrendingUp, PieChart, Users, RefreshCw, Download, AlertCircl
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser()
-  const router = useRouter()
   
   const [salesData, setSalesData] = useState<SalesDashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)

@@ -12,8 +12,7 @@ import { DateRangeFilter } from '@/components/dashboard/DateRangeFilter'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart3, TrendingUp, PieChart, Users, RefreshCw, Download, AlertCircle, Store } from 'lucide-react'
-import { MainNavigation, QuickActions } from '@/components/navigation/MainNavigation'
+import { BarChart3, TrendingUp, PieChart, Users, RefreshCw, Download, AlertCircle, Store, UserCog, Package } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser()
