@@ -230,47 +230,38 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Redirect Countdown */}
-            <div className="mb-6 p-6 bg-orange-50 rounded-xl border border-orange-200">
-              <div className="flex items-center justify-center mb-3">
-                <Loader2 className="h-6 w-6 text-orange-500 animate-spin" />
-              </div>
-              <p className="text-orange-900 font-semibold mb-1">
-                Redirecting to {roleConfig?.destination}...
-              </p>
-              <p className="text-orange-700 text-sm">
-                Redirecting in {redirectCountdown} second{redirectCountdown !== 1 ? 's' : ''}
-              </p>
-              <div className="mt-3 bg-orange-200 rounded-full h-2">
-                <div 
-                  className="bg-orange-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${((3 - redirectCountdown) / 3) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Manual Redirect Button */}
-            <button
-              onClick={() => {
-                if (userRole) {
-                  switch (userRole) {
-                    case 'admin':
-                      router.push('/admin')
-                      break
-                    case 'cashier':
-                      router.push('/pos')
-                      break
-                    case 'boss':
-                      router.push('/reports')
-                      break
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push('/dashboard/sales')}
+                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-sm flex items-center justify-center gap-2"
+              >
+                <BarChart3 className="h-5 w-5" />
+                View Sales Dashboard
+              </button>
+              
+              <button
+                onClick={() => {
+                  if (userRole) {
+                    switch (userRole) {
+                      case 'admin':
+                        router.push('/admin')
+                        break
+                      case 'cashier':
+                        router.push('/pos')
+                        break
+                      case 'boss':
+                        router.push('/reports')
+                        break
+                    }
                   }
-                }
-              }}
-              className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-sm flex items-center justify-center gap-2"
-            >
-              Continue Now
-              <ArrowRight className="h-5 w-5" />
-            </button>
+                }}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors shadow-sm flex items-center justify-center gap-2"
+              >
+                Go to {roleConfig?.destination}
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
 
