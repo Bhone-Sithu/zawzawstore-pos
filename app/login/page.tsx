@@ -29,7 +29,7 @@ export default function LoginPage() {
 
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId })
-        router.push('/dashboard')
+        router.push('/')
       } else {
         setError('Sign in failed. Please try again.')
       }
