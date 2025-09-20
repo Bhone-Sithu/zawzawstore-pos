@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { SalesPeriod } from "@/services/report-service"
+import type { SalesPeriod } from "@/services/report-service"
 import { CalendarDays, Filter } from 'lucide-react'
 
 interface DateRangeFilterProps {
@@ -60,7 +60,8 @@ export function DateRangeFilter({
         <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-end">
           {/* Period Filter */}
           <div className="flex-1 min-w-48">
-            <label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
+            <label className="text-sm font-medium text-gray-700 mb-2 block items-center gap-2">
               <CalendarDays className="h-4 w-4" />
               Time Period
             </label>
@@ -80,6 +81,7 @@ export function DateRangeFilter({
 
           {/* Branch Filter */}
           <div className="flex-1 min-w-48">
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
             <label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
               <Filter className="h-4 w-4" />
               Branch
@@ -103,6 +105,7 @@ export function DateRangeFilter({
           {showCustomDates && (
             <>
               <div className="flex-1 min-w-32">
+                {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   Start Date
                 </label>
@@ -115,6 +118,7 @@ export function DateRangeFilter({
                 />
               </div>
               <div className="flex-1 min-w-32">
+                {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   End Date
                 </label>

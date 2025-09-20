@@ -134,9 +134,9 @@ export default function LoginPage() {
               <p className="text-xs font-medium text-gray-500 mb-2">Available Branches</p>
               <div className="flex justify-center items-center gap-2 text-xs text-gray-600">
                 <span className="px-2 py-1 bg-gray-100 rounded font-medium">Rawang</span>
-                <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                <span className="w-1 h-1 bg-gray-400 rounded-full" />
                 <span className="px-2 py-1 bg-gray-100 rounded font-medium">Kuala Lumpur</span>
-                <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                <span className="w-1 h-1 bg-gray-400 rounded-full" />
                 <span className="px-2 py-1 bg-gray-100 rounded font-medium">Sungai Buloh</span>
               </div>
             </div>
