@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import POSProductSearch from '@/components/pos/POSProductSearch'
@@ -26,6 +25,26 @@ interface CartItem {
   stock: number
   image?: string
   customPrice?: boolean
+}
+
+interface ReceiptData {
+  transactionNumber: string
+  date: string
+  time: string
+  branchName: string
+  cashierName: string
+  items: Array<{
+    name_en: string
+    name_mm: string
+    quantity: number
+    price: number
+    total: number
+  }>
+  subtotal: number
+  tax: number
+  total: number
+  paymentMethod: string
+  isStaffCheckout: boolean
 }
 
 export default function POSPage() {
@@ -128,9 +147,163 @@ export default function POSPage() {
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const taxRate = 0.06 // 6% tax
-  const tax = subtotal * taxRate
-  const total = subtotal + tax
+  const total = subtotal
+
+  // Print receipt function
+  const printReceipt = (receiptData: ReceiptData) => {
+    const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes')
+    if (!printWindow) {
+      alert('Please allow popups for this site to print receipts')
+      return
+    }
+    
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Receipt</title>
+          <style>
+            body {
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.2;
+              margin: 0;
+              padding: 10px;
+              width: 300px;
+              background: white;
+            }
+            .receipt {
+              width: 100%;
+              max-width: 300px;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .large { font-size: 16px; }
+            .small { font-size: 10px; }
+            .dashed { border-bottom: 1px dashed #000; }
+            .solid { border-bottom: 1px solid #000; }
+            .flex { display: flex; justify-content: space-between; }
+            .mb-1 { margin-bottom: 3px; }
+            .mb-2 { margin-bottom: 5px; }
+            .mb-3 { margin-bottom: 8px; }
+            .mb-4 { margin-bottom: 15px; }
+            .pt-2 { padding-top: 5px; }
+            .pt-3 { padding-top: 10px; }
+            .staff-badge {
+              text-align: center;
+              margin-top: 5px;
+              padding: 3px;
+              background: #f0f0f0;
+              border: 1px solid #ccc;
+              font-size: 10px;
+              font-weight: bold;
+            }
+            @media print {
+              body { margin: 0; padding: 5mm; }
+              @page { size: 80mm auto; margin: 0; }
+            }
+          </style>
+          <script>
+            window.onload = function() {
+              // Auto print when page loads
+              setTimeout(function() {
+                window.print();
+                // Auto close after printing (optional)
+                setTimeout(function() {
+                  window.close();
+                }, 1000);
+              }, 500);
+            }
+          </script>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="center mb-4">
+              <div class="bold large">ZAWZAW STORE</div>
+              <div class="mb-1">${receiptData.branchName}</div>
+              <div class="small">POS & Inventory Management</div>
+            </div>
+
+            <div class="mb-4 dashed pb-2">
+              <div class="flex mb-1">
+                <span>Receipt #:</span>
+                <span class="bold">${receiptData.transactionNumber}</span>
+              </div>
+              <div class="flex mb-1">
+                <span>Date:</span>
+                <span>${receiptData.date}</span>
+              </div>
+              <div class="flex mb-1">
+                <span>Time:</span>
+                <span>${receiptData.time}</span>
+              </div>
+              <div class="flex mb-1">
+                <span>Cashier:</span>
+                <span>${receiptData.cashierName}</span>
+              </div>
+              ${receiptData.isStaffCheckout ? '<div class="staff-badge">STAFF PURCHASE</div>' : ''}
+            </div>
+
+            <div class="mb-4">
+              <div class="flex bold solid mb-2">
+                <span>ITEM</span>
+                <span>QTY</span>
+                <span>PRICE</span>
+                <span>TOTAL</span>
+              </div>
+              
+              ${receiptData.items.map(item => `
+                <div class="mb-3">
+                  <div class="bold mb-1">${item.name_en}</div>
+                  <div class="small mb-1">${item.name_mm}</div>
+                  <div class="flex small">
+                    <span style="width: 40%"></span>
+                    <span style="width: 15%; text-align: center">${item.quantity}</span>
+                    <span style="width: 20%; text-align: right">RM ${item.price.toFixed(2)}</span>
+                    <span style="width: 25%; text-align: right; font-weight: bold">RM ${item.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="dashed pt-3 mb-4">
+              <div class="flex bold large">
+                <span>TOTAL:</span>
+                <span>RM ${receiptData.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div class="mb-4 dashed pb-2">
+              <div class="flex">
+                <span>Payment Method:</span>
+                <span class="bold">${receiptData.paymentMethod.toUpperCase()}</span>
+              </div>
+            </div>
+
+            <div class="center small">
+              <div class="mb-1">Thank you for your purchase!</div>
+              <div class="mb-1">Please keep this receipt for your records</div>
+              <div class="mb-3">Visit us again soon!</div>
+              <div class="small solid pt-2">Generated by ZawZaw Store POS System</div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+    
+    printWindow.document.write(receiptHTML)
+    printWindow.document.close()
+  }
+
+  // Get branch name helper
+  const getBranchName = async (branchId: string) => {
+    const { data } = await supabase
+      .from('branches')
+      .select('name')
+      .eq('id', branchId)
+      .single()
+    return data?.name || 'Unknown Branch'
+  }
 
   const processPayment = async () => {
     if (!branchId || !user || cartItems.length === 0) {
@@ -156,7 +329,7 @@ export default function POSPage() {
         branch_id: branchId,
         cashier_id: userData.id,
         subtotal,
-        tax_amount: tax,
+        tax_amount: 0,
         discount_amount: 0,
         total_amount: total,
         payment_method: 'cash', // Default to cash for now
@@ -172,13 +345,42 @@ export default function POSPage() {
       // Create transaction
       const transaction = await createTransaction(transactionData)
       
+      // Get branch name for receipt
+      const branchName = await getBranchName(branchId)
+      
+      // Prepare receipt data
+      const receiptData = {
+        transactionNumber: transaction.transaction_number,
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString(),
+        branchName,
+        cashierName: user.firstName || 'Cashier',
+        items: cartItems.map(item => ({
+          name_en: item.name_en,
+          name_mm: item.name_mm,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity
+        })),
+        subtotal,
+        tax: 0,
+        total,
+        paymentMethod: 'cash',
+        isStaffCheckout
+      }
+      
       // Success! Clear cart and show success message
       clearCart()
       setIsStaffCheckout(false)
       // Refresh product list to update stock quantities
       setRefreshTrigger(prev => prev + 1)
       const checkoutType = isStaffCheckout ? 'Staff' : 'Customer'
+      
+      // Show success message
       alert(`${checkoutType} payment successful! Transaction #${transaction.transaction_number}`)
+      
+      // Automatically print receipt with current transaction data
+      printReceipt(receiptData)
       
     } catch (error) {
       console.error('Payment processing error:', error)
@@ -243,15 +445,6 @@ export default function POSPage() {
                 {/* Totals & Checkout - At bottom of cart */}
                 <div className="pt-4 border-t">
                   <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-base">
-                      <span>Subtotal:</span>
-                      <span>RM {subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-base">
-                      <span>Tax (6%):</span>
-                      <span>RM {tax.toFixed(2)}</span>
-                    </div>
-                    <Separator />
                     <div className="flex justify-between text-xl font-bold">
                       <span>Total:</span>
                       <span className="text-orange-600">RM {total.toFixed(2)}</span>
@@ -278,9 +471,22 @@ export default function POSPage() {
                     )}
                   </Button>
 
+
                   {/* Staff Checkout Toggle - Below main button */}
                   <div className="border-t pt-4">
-                    <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer" onClick={() => setIsStaffCheckout(!isStaffCheckout)}>
+                    <div 
+                      className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer" 
+                      onClick={() => setIsStaffCheckout(!isStaffCheckout)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setIsStaffCheckout(!isStaffCheckout)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Toggle staff checkout mode"
+                    >
                       <div className="flex items-center space-x-3">
                         <Checkbox
                           id="staff-checkout"
@@ -323,6 +529,7 @@ export default function POSPage() {
           <POSStats />
         </div>
       </div>
+
     </div>
   )
 }
