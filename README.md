@@ -61,7 +61,7 @@ System Settings ✅ ❌ ❌
 Backup/Restore ✅
 
 Scenerio :
-A website name is “ZawZaw Store”
+A website name is "Grocery Store"
 Mr. Zaw zaw has 3 shops
 One in Rawang Malaysia , one in Kuala Lumpur and one in sungai buloh.
 He wants to create a website for his 3 shops.

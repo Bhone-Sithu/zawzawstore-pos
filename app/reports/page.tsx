@@ -62,7 +62,7 @@ export default function ReportsDashboard() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">
-                ZawZaw Store - Management Reports
+                Grocery Store - Management Reports
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -210,7 +210,7 @@ export default function ReportsDashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">ZawZaw Store KL</p>
+                    <p className="font-medium text-gray-900">Grocery Store KL</p>
                     <p className="text-sm text-gray-900">Kuala Lumpur</p>
                   </div>
                   <div className="text-right">
@@ -221,7 +221,7 @@ export default function ReportsDashboard() {
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">ZawZaw Store Rawang</p>
+                    <p className="font-medium text-gray-900">Grocery Store Rawang</p>
                     <p className="text-sm text-gray-900">Rawang</p>
                   </div>
                   <div className="text-right">
@@ -232,7 +232,7 @@ export default function ReportsDashboard() {
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">ZawZaw Store Sungai Buloh</p>
+                    <p className="font-medium text-gray-900">Grocery Store Sungai Buloh</p>
                     <p className="text-sm text-gray-900">Sungai Buloh</p>
                   </div>
                   <div className="text-right">

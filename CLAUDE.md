@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## ZawZaw Store POS & Inventory Management System
+## Grocery Store POS & Inventory Management System
 
 This is a Next.js 15 application built with TypeScript, React 19, and Tailwind CSS 4. It's a multi-branch retail POS system with role-based access control for Admin, Cashier, and Boss roles.
 

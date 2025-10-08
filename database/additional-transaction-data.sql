@@ -1,4 +1,4 @@
--- Additional Sample Transaction Data for ZawZaw Store POS
+-- Additional Sample Transaction Data for Grocery Store POS
 -- This adds more transactions across different dates, branches, and categories
 
 -- More transactions for the past 30 days

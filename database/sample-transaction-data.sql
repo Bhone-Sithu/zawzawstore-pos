@@ -1,4 +1,4 @@
--- Sample Transaction Data for ZawZaw Store POS
+-- Sample Transaction Data for Grocery Store POS
 -- Execute this after setting up the main schema and having users/products in place
 
 -- Sample transactions for different branches and time periods

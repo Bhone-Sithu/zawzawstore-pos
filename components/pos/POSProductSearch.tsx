@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BarcodeInput } from '@/components/ui/barcode-input'
 import { usePOSProducts } from '@/hooks/use-pos-products'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { Plus, Search, ShoppingCart, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
 
 interface POSProductSearchProps {
@@ -66,7 +67,7 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
     })
   }
 
-  // Handle barcode scan
+  // Handle barcode scan from BarcodeInput component (when focused)
   const handleBarcodeSearch = async (barcode: string) => {
     if (!barcode.trim()) return
     
@@ -82,8 +83,48 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
     }
   }
 
+  // Handle global barcode scan - populate input and trigger search
+  const handleGlobalBarcodeSearch = async (barcode: string) => {
+    if (!barcode.trim()) return
+    
+    // Set the barcode in the search input
+    setSearchInput(barcode)
+    
+    // Trigger the search automatically
+    setTimeout(() => {
+      handleSearch()
+    }, 100) // Small delay to ensure input is set
+  }
+
+  // Global barcode scanner for automatic detection
+  const { isScanning } = useBarcodeScanner({
+    onScan: handleGlobalBarcodeSearch,
+    enabled: true,
+    preventDefault: true,
+    global: true, // Enable global scanning
+    minLength: 3,
+    maxLength: 50,
+    timeout: 150
+  })
+
   return (
     <div className="flex flex-col h-full">
+      {/* Barcode Scanning Indicator */}
+      {isScanning && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 animate-pulse">
+          <div className="flex items-center gap-2">
+            <Search className="h-5 w-5 text-green-600" />
+            <span className="text-green-800 font-medium">Barcode detected - Auto searching...</span>
+          </div>
+          <div className="flex-1" />
+          <div className="flex gap-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+        </div>
+      )}
+
       {/* Search Controls */}
       <div className="mb-6">
         <div className="flex gap-3 mb-4">
@@ -150,7 +191,7 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
             <span className="ml-2 text-gray-600">Loading products...</span>
           </div>
         ) : products.length === 0 ? (

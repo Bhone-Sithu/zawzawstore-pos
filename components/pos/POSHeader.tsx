@@ -33,7 +33,7 @@ export default function POSHeader() {
                 <Store className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">ZawZaw Store</h1>
+                <h1 className="text-xl font-bold text-gray-900">Grocery Store</h1>
                 <p className="text-sm text-gray-500">Point of Sale</p>
               </div>
             </div>

@@ -50,7 +50,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-xl mb-4 shadow-md">
               <Store className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">ZawZaw Store</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Grocery Store</h1>
             <p className="text-gray-600">POS & Inventory Management</p>
           </div>
 

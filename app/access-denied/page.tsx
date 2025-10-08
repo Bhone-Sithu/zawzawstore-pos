@@ -32,7 +32,7 @@ export default function AccessDeniedPage() {
             {/* Title */}
             <h1 className="text-3xl font-bold text-gray-900 mb-3">Account Not Found</h1>
             <p className="text-gray-600 mb-8 leading-relaxed">
-              Your account is not registered in the ZawZaw Store POS system. Please contact your administrator to set up your account.
+              Your account is not registered in the Grocery Store POS system. Please contact your administrator to set up your account.
             </p>
 
             {/* User Info Card */}
@@ -108,7 +108,7 @@ export default function AccessDeniedPage() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-gray-500 text-sm">
-            ZawZaw Store POS System • Need help? Contact your system administrator
+            Grocery Store POS System • Need help? Contact your system administrator
           </p>
         </div>
       </div>

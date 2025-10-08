@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZawZaw Store - POS & Inventory Management",
-  description: "Multi-branch POS and inventory management system for ZawZaw Store",
+  title: "Grocery Store - POS & Inventory Management",
+  description: "Multi-branch POS and inventory management system for Grocery Store",
 };
 
 export default function RootLayout({

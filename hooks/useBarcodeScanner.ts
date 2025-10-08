@@ -9,6 +9,7 @@ interface BarcodeScannerOptions {
   timeout?: number
   preventDefault?: boolean
   enabled?: boolean
+  global?: boolean // Allow scanning even when other inputs are focused
 }
 
 export function useBarcodeScanner({
@@ -17,7 +18,8 @@ export function useBarcodeScanner({
   maxLength = 50,
   timeout = 100,
   preventDefault = true,
-  enabled = true
+  enabled = true,
+  global = false
 }: BarcodeScannerOptions) {
   const [isScanning, setIsScanning] = useState(false)
   const scanBuffer = useRef('')
@@ -27,14 +29,14 @@ export function useBarcodeScanner({
     if (!enabled) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore if user is typing in an input field (unless it's our barcode input)
+      // Handle input field checks
       const target = event.target as HTMLElement
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true'
-      
-      // Allow scanning in barcode-specific input fields
       const isBarcodeInput = target.dataset.barcodeInput === 'true'
       
-      if (isInputField && !isBarcodeInput) {
+      // If global mode is enabled, allow scanning everywhere
+      // If not global, only allow in barcode inputs or when no input is focused
+      if (!global && isInputField && !isBarcodeInput) {
         return
       }
 
@@ -86,7 +88,7 @@ export function useBarcodeScanner({
         clearTimeout(timeoutRef.current)
       }
     }
-  }, [onScan, minLength, maxLength, timeout, preventDefault, enabled])
+  }, [onScan, minLength, maxLength, timeout, preventDefault, enabled, global])
 
   // Manual trigger for testing
   const triggerScan = (barcode: string) => {

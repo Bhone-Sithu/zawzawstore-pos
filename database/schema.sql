@@ -1,4 +1,4 @@
--- ZawZaw Store POS Database Schema
+-- Grocery Store POS Database Schema
 
 -- Enable Row Level Security
 ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
@@ -149,9 +149,9 @@ CREATE INDEX idx_users_branch ON users(branch_id);
 
 -- Insert default branches
 INSERT INTO branches (id, name, location, address) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'ZawZaw Store Rawang', 'Rawang, Malaysia', 'Rawang, Selangor, Malaysia'),
-    ('22222222-2222-2222-2222-222222222222', 'ZawZaw Store KL', 'Kuala Lumpur, Malaysia', 'Kuala Lumpur, Malaysia'),
-    ('33333333-3333-3333-3333-333333333333', 'ZawZaw Store Sungai Buloh', 'Sungai Buloh, Malaysia', 'Sungai Buloh, Selangor, Malaysia');
+    ('11111111-1111-1111-1111-111111111111', 'Grocery Store Rawang', 'Rawang, Malaysia', 'Rawang, Selangor, Malaysia'),
+    ('22222222-2222-2222-2222-222222222222', 'Grocery Store KL', 'Kuala Lumpur, Malaysia', 'Kuala Lumpur, Malaysia'),
+    ('33333333-3333-3333-3333-333333333333', 'Grocery Store Sungai Buloh', 'Sungai Buloh, Malaysia', 'Sungai Buloh, Selangor, Malaysia');
 
 -- Insert default categories
 INSERT INTO categories (name_en, name_mm) VALUES

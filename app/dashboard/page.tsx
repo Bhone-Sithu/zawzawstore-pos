@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
-import { ReportService, SalesDashboardData, SalesPeriod } from '@/services/report-service'
+import { ReportService, type SalesDashboardData, type SalesPeriod } from '@/services/report-service'
 import { SalesMetrics } from '@/components/dashboard/SalesMetrics'
 import { RevenueChart } from '@/components/dashboard/RevenueChart'
 import { BranchComparison } from '@/components/dashboard/BranchComparison'

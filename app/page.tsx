@@ -75,7 +75,7 @@ export default function HomePage() {
   }, [isSignedIn, isLoaded, user, router])
 
   const loadingSteps = [
-    { icon: Store, text: 'Loading ZawZaw Store...', subText: 'Initializing application' },
+    { icon: Store, text: 'Loading Grocery Store...', subText: 'Initializing application' },
     { icon: UserCheck, text: 'Verifying account...', subText: 'Checking your credentials' },
     { icon: CheckCircle, text: 'Account verified!', subText: 'Redirecting to your dashboard' }
   ]
@@ -92,7 +92,7 @@ export default function HomePage() {
             <Store className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-            ZawZaw Store
+            Grocery Store
           </h1>
           <p className="text-xl text-gray-600">
             POS & Inventory Management
