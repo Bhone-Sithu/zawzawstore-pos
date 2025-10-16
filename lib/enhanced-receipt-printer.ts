@@ -5,7 +5,6 @@ import { ReceiptPrinter as WebSerialPrinter } from './receipt-printer'
 
 // Dynamic import for esc-pos-printer to handle client-side only usage
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- esc-pos-printer has no TypeScript types
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 let EscPosPrinter: any = null
 
 export type PrinterMethod = 'web-serial' | 'esc-pos' | 'browser-fallback'
