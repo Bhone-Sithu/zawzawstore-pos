@@ -11,7 +11,8 @@ import { DateRangeFilter } from '@/components/dashboard/DateRangeFilter'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart3, TrendingUp, PieChart, Users, RefreshCw, Download, AlertCircle } from 'lucide-react'
+import { PrinterSettings } from "@/components/admin/PrinterSettings"
+import { BarChart3, TrendingUp, PieChart, Users, RefreshCw, Download, AlertCircle, Settings } from 'lucide-react'
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser()
@@ -164,7 +165,7 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full lg:w-auto lg:grid-cols-4 bg-white border border-gray-200">
+        <TabsList className="grid w-full lg:w-auto lg:grid-cols-5 bg-white border border-gray-200">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -180,6 +181,10 @@ export default function AdminDashboard() {
           <TabsTrigger value="staff" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Staff
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Settings
           </TabsTrigger>
         </TabsList>
 
@@ -295,6 +300,10 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <PrinterSettings />
         </TabsContent>
       </Tabs>
     </div>

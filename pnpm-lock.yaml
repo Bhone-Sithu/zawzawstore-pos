@@ -47,6 +47,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      esc-pos-printer:
+        specifier: ^1.0.11
+        version: 1.0.11
       lucide-react:
         specifier: ^0.532.0
         version: 0.532.0(react@19.1.0)
@@ -1468,6 +1471,9 @@ packages:
 
   es-toolkit@1.39.10:
     resolution: {integrity: sha512-E0iGnTtbDhkeczB0T+mxmoVlT4YNweEKBLq7oaU4p11mecdsZpNWOglI4895Vh4usbQ+LsJiuLuI2L0Vdmfm2w==}
+
+  esc-pos-printer@1.0.11:
+    resolution: {integrity: sha512-NLMO42cl10ZTGAaI1LFm+pnGrdLBuxFpnL7rANx/xmz8g1uzsSB6XQ+RkPBAz0gnB30+oL2I1ZGVkMZxvw3sAQ==}
 
   escape-string-regexp@4.0.0:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
@@ -3986,6 +3992,8 @@ snapshots:
       is-symbol: 1.1.1
 
   es-toolkit@1.39.10: {}
+
+  esc-pos-printer@1.0.11: {}
 
   escape-string-regexp@4.0.0: {}
 

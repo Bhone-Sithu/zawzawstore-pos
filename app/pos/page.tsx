@@ -31,7 +31,7 @@ interface CartItem {
 
 function POSPageContent() {
   const { isAuthorized, isLoading, branchId, user } = useAuth('cashier')
-  const { printReceipt, isSupported, isConnected, connectPrinter } = useReceiptPrinter()
+  const { printReceipt, isWebSerialSupported, isConnected, connectPrinter } = useReceiptPrinter()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [isStaffCheckout, setIsStaffCheckout] = useState(false)
@@ -290,7 +290,7 @@ function POSPageContent() {
                   </div>
 
                   {/* Printer Status */}
-                  {isSupported && (
+                  {isWebSerialSupported && (
                     <div className="mb-3 p-2 bg-gray-50 rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {isConnected ? (

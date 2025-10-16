@@ -1,8 +1,9 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { ReceiptPrinter, getReceiptPrinter, printReceiptFallback } from '@/lib/receipt-printer'
-import { ReceiptData } from '@/types/receipt.types'
+import { printReceiptFallback } from '@/lib/receipt-printer'
+import { EnhancedReceiptPrinter, getEnhancedReceiptPrinter, type PrinterMethod, type PrinterConfig } from '@/lib/enhanced-receipt-printer'
+import type { ReceiptData } from '@/types/receipt.types'
 
 interface ReceiptPrinterContextType {
   isConnected: boolean
@@ -11,7 +12,13 @@ interface ReceiptPrinterContextType {
   disconnectPrinter: () => Promise<void>
   printReceipt: (data: ReceiptData) => Promise<boolean>
   openCashDrawer: () => Promise<void>
-  isSupported: boolean
+  isWebSerialSupported: boolean
+  isEscPosSupported: boolean
+  currentMethod: PrinterMethod
+  setMethod: (method: PrinterMethod) => void
+  setPrinterName: (name: string) => void
+  getAvailablePrinters: () => Promise<string[]>
+  config: PrinterConfig
 }
 
 const ReceiptPrinterContext = createContext<ReceiptPrinterContextType | undefined>(undefined)
@@ -23,8 +30,14 @@ interface ReceiptPrinterProviderProps {
 export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps) {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [printer] = useState(() => getReceiptPrinter())
-  const [isSupported] = useState(() => ReceiptPrinter.isSupported())
+  const [printer] = useState(() => getEnhancedReceiptPrinter())
+  const [isWebSerialSupported] = useState(() => EnhancedReceiptPrinter.isWebSerialSupported())
+  const [isEscPosSupported, setIsEscPosSupported] = useState(false)
+  
+  // Check ESC/POS support on mount
+  useEffect(() => {
+    EnhancedReceiptPrinter.isEscPosSupported().then(setIsEscPosSupported)
+  }, [])
 
   const connectPrinter = async (): Promise<boolean> => {
     if (isConnecting || isConnected) return isConnected
@@ -54,20 +67,10 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
 
   const printReceipt = async (data: ReceiptData): Promise<boolean> => {
     try {
-      if (isConnected) {
-        // Try direct printing first
-        const success = await printer.printReceipt(data)
-        if (success) {
-          return true
-        }
-      }
-      
-      // Fallback to browser print (but still automatic)
-      printReceiptFallback(data)
-      return true
+      return await printer.printReceipt(data)
     } catch (error) {
       console.error('Failed to print receipt:', error)
-      // Still fallback to browser print
+      // Fallback to browser print
       printReceiptFallback(data)
       return true
     }
@@ -77,6 +80,24 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     if (isConnected) {
       await printer.openCashDrawer()
     }
+  }
+
+  const setMethod = (method: PrinterMethod): void => {
+    const currentConfig = printer.getConfig()
+    printer.setConfig({ ...currentConfig, method })
+    // Disconnect if switching methods
+    if (isConnected) {
+      disconnectPrinter()
+    }
+  }
+
+  const setPrinterName = (name: string): void => {
+    const currentConfig = printer.getConfig()
+    printer.setConfig({ ...currentConfig, printerName: name })
+  }
+
+  const getAvailablePrinters = async (): Promise<string[]> => {
+    return printer.getAvailablePrinters()
   }
 
   // Auto-disconnect on page unload
@@ -103,7 +124,13 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     disconnectPrinter,
     printReceipt,
     openCashDrawer,
-    isSupported
+    isWebSerialSupported,
+    isEscPosSupported,
+    currentMethod: printer.getCurrentMethod(),
+    setMethod,
+    setPrinterName,
+    getAvailablePrinters,
+    config: printer.getConfig()
   }
 
   return (
