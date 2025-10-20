@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { printReceiptFallback } from '@/lib/receipt-printer'
-import { EnhancedReceiptPrinter, getEnhancedReceiptPrinter, type PrinterMethod, type PrinterConfig } from '@/lib/enhanced-receipt-printer'
+import { QZTrayPrinter, getQZTrayPrinter, type PrinterMethod, type PrinterConfig } from '@/lib/qz-tray-printer'
 import type { ReceiptData } from '@/types/receipt.types'
 
 interface ReceiptPrinterContextType {
@@ -13,7 +13,7 @@ interface ReceiptPrinterContextType {
   printReceipt: (data: ReceiptData) => Promise<boolean>
   openCashDrawer: () => Promise<void>
   isWebSerialSupported: boolean
-  isEscPosSupported: boolean
+  isQZTraySupported: boolean
   currentMethod: PrinterMethod
   setMethod: (method: PrinterMethod) => void
   setPrinterName: (name: string) => void
@@ -30,13 +30,13 @@ interface ReceiptPrinterProviderProps {
 export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps) {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [printer] = useState(() => getEnhancedReceiptPrinter())
-  const [isWebSerialSupported] = useState(() => EnhancedReceiptPrinter.isWebSerialSupported())
-  const [isEscPosSupported, setIsEscPosSupported] = useState(false)
+  const [printer] = useState(() => getQZTrayPrinter())
+  const [isWebSerialSupported] = useState(() => QZTrayPrinter.isWebSerialSupported())
+  const [isQZTraySupported, setIsQZTraySupported] = useState(false)
   
-  // Check ESC/POS support on mount
+  // Check QZ Tray support on mount
   useEffect(() => {
-    EnhancedReceiptPrinter.isEscPosSupported().then(setIsEscPosSupported)
+    QZTrayPrinter.isQZTraySupported().then(setIsQZTraySupported)
   }, [])
 
   const connectPrinter = async (): Promise<boolean> => {
@@ -79,8 +79,8 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     } catch (error) {
       console.error('Failed to print receipt:', error)
       
-      // Show user-friendly error message for ESC-POS
-      if (printer.getCurrentMethod() === 'esc-pos') {
+      // Show user-friendly error message for QZ Tray
+      if (printer.getCurrentMethod() === 'qz-tray') {
         if (error instanceof Error) {
           alert(`Printing Failed:\n\n${error.message}`)
         } else {
@@ -144,7 +144,7 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     printReceipt,
     openCashDrawer,
     isWebSerialSupported,
-    isEscPosSupported,
+    isQZTraySupported,
     currentMethod: printer.getCurrentMethod(),
     setMethod,
     setPrinterName,

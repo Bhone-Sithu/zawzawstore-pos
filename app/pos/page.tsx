@@ -37,10 +37,10 @@ function POSPageContent() {
   const [isStaffCheckout, setIsStaffCheckout] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  // Set ESC-POS method for cashier devices (thermal printers)
+  // Set QZ Tray method for cashier devices (thermal printers)
   React.useEffect(() => {
-    setMethod('esc-pos')
-  }, [])
+    setMethod('qz-tray')
+  }, [setMethod])
 
   // Cart management functions
   const addToCart = (product: {

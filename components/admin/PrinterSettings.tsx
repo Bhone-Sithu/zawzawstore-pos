@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useReceiptPrinter } from '@/contexts/ReceiptPrinterContext'
-import type { PrinterMethod } from '@/lib/enhanced-receipt-printer'
+import type { PrinterMethod } from '@/lib/qz-tray-printer'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -17,7 +17,7 @@ export function PrinterSettings() {
     connectPrinter,
     disconnectPrinter,
     isWebSerialSupported,
-    isEscPosSupported,
+    isQZTraySupported,
     currentMethod,
     setMethod,
     setPrinterName,
@@ -30,9 +30,9 @@ export function PrinterSettings() {
   const [loadingPrinters, setLoadingPrinters] = useState(false)
   const [testPrinting, setTestPrinting] = useState(false)
 
-  // Don't auto-load printers when method changes to prevent Web Serial popup
+  // Don't auto-load printers when method changes to prevent connection issues
   // useEffect(() => {
-  //   if (currentMethod === 'esc-pos') {
+  //   if (currentMethod === 'qz-tray') {
   //     loadPrinters()
   //   }
   // }, [currentMethod])
@@ -101,7 +101,7 @@ export function PrinterSettings() {
     switch (method) {
       case 'web-serial':
         return <Cable className="h-4 w-4" />
-      case 'esc-pos':
+      case 'qz-tray':
         return <Wifi className="h-4 w-4" />
       case 'browser-fallback':
         return <Globe className="h-4 w-4" />
@@ -114,8 +114,8 @@ export function PrinterSettings() {
     switch (method) {
       case 'web-serial':
         return 'Direct USB/Serial connection to thermal printer'
-      case 'esc-pos':
-        return 'Network or USB printer using ESC/POS commands'
+      case 'qz-tray':
+        return 'Thermal printer via QZ Tray (recommended)'
       case 'browser-fallback':
         return 'Print using browser (fallback option)'
       default:
@@ -204,13 +204,13 @@ export function PrinterSettings() {
                     </div>
                   </div>
                 </SelectItem>
-                <SelectItem value="esc-pos" disabled={!isEscPosSupported}>
+                <SelectItem value="qz-tray" disabled={!isQZTraySupported}>
                   <div className="flex items-center gap-2">
-                    {getMethodIcon('esc-pos')}
+                    {getMethodIcon('qz-tray')}
                     <div>
-                      <p className="font-medium">ESC/POS Network Printer</p>
+                      <p className="font-medium">QZ Tray (Thermal Printer)</p>
                       <p className="text-xs text-gray-500">
-                        {isEscPosSupported ? 'Supported' : 'Library not available'}
+                        {isQZTraySupported ? 'Supported' : 'QZ Tray not running'}
                       </p>
                     </div>
                   </div>
@@ -231,8 +231,8 @@ export function PrinterSettings() {
             </p>
           </div>
 
-          {/* ESC/POS Printer Selection */}
-          {currentMethod === 'esc-pos' && (
+          {/* QZ Tray Printer Selection */}
+          {currentMethod === 'qz-tray' && (
             <div>
               <label htmlFor="available-printers" className="text-sm font-medium text-gray-900 mb-2 block">
                 Available Printers
@@ -272,7 +272,7 @@ export function PrinterSettings() {
               </div>
               {availablePrinters.length === 0 && !loadingPrinters && (
                 <p className="text-xs text-gray-600 mt-1">
-                  Click &quot;Load Printers&quot; to scan for available printers. Make sure ESC-POS Printer Manager is running.
+                  Click &quot;Load Printers&quot; to scan for available printers. Make sure QZ Tray is running.
                 </p>
               )}
             </div>
@@ -284,6 +284,16 @@ export function PrinterSettings() {
               <p className="text-sm text-blue-800">
                 <strong>Web Serial Mode:</strong> Click connect to select your USB thermal printer. 
                 Make sure your printer is connected and powered on.
+              </p>
+            </div>
+          )}
+
+          {/* QZ Tray Information */}
+          {currentMethod === 'qz-tray' && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                <strong>QZ Tray Mode:</strong> Download and install QZ Tray from qz.io, then configure your thermal printer. 
+                This is the recommended method for thermal receipt printers.
               </p>
             </div>
           )}
@@ -358,7 +368,7 @@ export function PrinterSettings() {
 
         {/* Support Information */}
         <div className="pt-4 border-t border-gray-200">
-          <h4 className="font-medium text-gray-900 mb-2">Browser Support</h4>
+          <h4 className="font-medium text-gray-900 mb-2">System Support</h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center justify-between">
               <span>Web Serial API:</span>
@@ -367,9 +377,9 @@ export function PrinterSettings() {
               </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span>ESC/POS Library:</span>
-              <Badge variant={isEscPosSupported ? "default" : "secondary"} className={isEscPosSupported ? "bg-green-100 text-green-800" : ""}>
-                {isEscPosSupported ? "Available" : "Not Available"}
+              <span>QZ Tray:</span>
+              <Badge variant={isQZTraySupported ? "default" : "secondary"} className={isQZTraySupported ? "bg-green-100 text-green-800" : ""}>
+                {isQZTraySupported ? "Connected" : "Not Running"}
               </Badge>
             </div>
           </div>

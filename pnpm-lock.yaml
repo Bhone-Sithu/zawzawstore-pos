@@ -47,15 +47,15 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
-      esc-pos-printer:
-        specifier: ^1.0.11
-        version: 1.0.11
       lucide-react:
         specifier: ^0.532.0
         version: 0.532.0(react@19.1.0)
       next:
         specifier: 15.4.4
         version: 15.4.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      qz-tray:
+        specifier: ^2.2.5
+        version: 2.2.5
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -1472,9 +1472,6 @@ packages:
   es-toolkit@1.39.10:
     resolution: {integrity: sha512-E0iGnTtbDhkeczB0T+mxmoVlT4YNweEKBLq7oaU4p11mecdsZpNWOglI4895Vh4usbQ+LsJiuLuI2L0Vdmfm2w==}
 
-  esc-pos-printer@1.0.11:
-    resolution: {integrity: sha512-NLMO42cl10ZTGAaI1LFm+pnGrdLBuxFpnL7rANx/xmz8g1uzsSB6XQ+RkPBAz0gnB30+oL2I1ZGVkMZxvw3sAQ==}
-
   escape-string-regexp@4.0.0:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
@@ -2189,6 +2186,9 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
+
+  qz-tray@2.2.5:
+    resolution: {integrity: sha512-ZPdjFLX1K9j+9v49ertN/QABBhPjUQLQSAQLkSWBrkHLpSv7/rTLLx0NcNMAquCq+WV7Ep4Aw00NJOXMQuMXOA==}
 
   react-dom@19.1.0:
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
@@ -3993,8 +3993,6 @@ snapshots:
 
   es-toolkit@1.39.10: {}
 
-  esc-pos-printer@1.0.11: {}
-
   escape-string-regexp@4.0.0: {}
 
   eslint-config-next@15.4.4(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.3):
@@ -4763,6 +4761,8 @@ snapshots:
   punycode@2.3.1: {}
 
   queue-microtask@1.2.3: {}
+
+  qz-tray@2.2.5: {}
 
   react-dom@19.1.0(react@19.1.0):
     dependencies:
