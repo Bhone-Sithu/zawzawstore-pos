@@ -50,6 +50,14 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     } catch (error) {
       console.error('Failed to connect printer:', error)
       setIsConnected(false)
+      
+      // Show user-friendly error message
+      if (error instanceof Error) {
+        alert(`Printer Connection Failed:\n\n${error.message}`)
+      } else {
+        alert('Failed to connect to printer. Please check your printer setup.')
+      }
+      
       return false
     } finally {
       setIsConnecting(false)
@@ -70,7 +78,18 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
       return await printer.printReceipt(data)
     } catch (error) {
       console.error('Failed to print receipt:', error)
-      // Fallback to browser print
+      
+      // Show user-friendly error message for ESC-POS
+      if (printer.getCurrentMethod() === 'esc-pos') {
+        if (error instanceof Error) {
+          alert(`Printing Failed:\n\n${error.message}`)
+        } else {
+          alert('Failed to print receipt. Please check your printer connection.')
+        }
+        return false
+      }
+      
+      // Fallback to browser print for other methods
       printReceiptFallback(data)
       return true
     }

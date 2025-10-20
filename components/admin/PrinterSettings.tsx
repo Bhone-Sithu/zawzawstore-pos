@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useReceiptPrinter } from '@/contexts/ReceiptPrinterContext'
 import type { PrinterMethod } from '@/lib/enhanced-receipt-printer'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,13 +30,12 @@ export function PrinterSettings() {
   const [loadingPrinters, setLoadingPrinters] = useState(false)
   const [testPrinting, setTestPrinting] = useState(false)
 
-  // Load available printers when method changes to esc-pos
-  useEffect(() => {
-    if (currentMethod === 'esc-pos') {
-      loadPrinters()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMethod])
+  // Don't auto-load printers when method changes to prevent Web Serial popup
+  // useEffect(() => {
+  //   if (currentMethod === 'esc-pos') {
+  //     loadPrinters()
+  //   }
+  // }, [currentMethod])
 
   const loadPrinters = async () => {
     setLoadingPrinters(true)
@@ -249,7 +248,7 @@ export function PrinterSettings() {
                       loadingPrinters 
                         ? "Loading printers..." 
                         : availablePrinters.length === 0 
-                          ? "No printers found" 
+                          ? "Click 'Load Printers' to scan for printers" 
                           : "Select a printer"
                     } />
                   </SelectTrigger>
@@ -268,9 +267,14 @@ export function PrinterSettings() {
                   disabled={loadingPrinters}
                   className="whitespace-nowrap"
                 >
-                  Refresh
+                  {loadingPrinters ? "Loading..." : "Load Printers"}
                 </Button>
               </div>
+              {availablePrinters.length === 0 && !loadingPrinters && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Click &quot;Load Printers&quot; to scan for available printers. Make sure ESC-POS Printer Manager is running.
+                </p>
+              )}
             </div>
           )}
 

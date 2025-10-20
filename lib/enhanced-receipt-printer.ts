@@ -84,24 +84,34 @@ export class EnhancedReceiptPrinter {
         case 'esc-pos': {
           await this.initEscPosPrinter()
           if (!this.escPosPrinter) {
-            console.warn('ESC/POS printer not available, falling back to Web Serial')
-            this.config.method = 'web-serial'
-            return this.connect()
+            console.error('ESC/POS printer library not available. Please ensure ESC-POS Printer Manager is installed and running.')
+            throw new Error('ESC/POS Printer Manager is required but not available. Please install and run the ESC-POS Printer Manager from https://escpos-printermanager.netlify.app/')
           }
 
           if (this.config.printerName) {
-            this.escPosPrinter.setPrinterName(this.config.printerName)
-            this.isConnected = true
-            return true
+            try {
+              this.escPosPrinter.setPrinterName(this.config.printerName)
+              this.isConnected = true
+              return true
+            } catch (error) {
+              console.error('Failed to set printer name:', error)
+              throw new Error(`Failed to connect to printer "${this.config.printerName}". Please check if the printer is configured in ESC-POS Printer Manager.`)
+            }
           }
           
           const printers = await this.getAvailablePrinters()
-          if (printers.length > 0) {
+          if (printers.length === 0) {
+            throw new Error('No printers found. Please configure your printer in ESC-POS Printer Manager first.')
+          }
+          
+          try {
             this.escPosPrinter.setPrinterName(printers[0])
             this.isConnected = true
             return true
+          } catch (error) {
+            console.error('Failed to connect to first available printer:', error)
+            throw new Error(`Failed to connect to printer "${printers[0]}". Please check printer configuration.`)
           }
-          return false
         }
 
         case 'browser-fallback':
@@ -151,8 +161,7 @@ export class EnhancedReceiptPrinter {
 
         case 'esc-pos':
           if (!this.isConnected) {
-            const connected = await this.connect()
-            if (!connected) throw new Error('Failed to connect to ESC/POS printer')
+            await this.connect() // This will throw error if connection fails
           }
           return await this.printWithEscPos(receiptData)
 
@@ -165,9 +174,16 @@ export class EnhancedReceiptPrinter {
       }
     } catch (error) {
       console.error('Failed to print receipt:', error)
-      // Auto-fallback to browser print
-      this.printBrowserFallback(receiptData)
-      return true
+      
+      // Only fallback to browser print if method is NOT esc-pos
+      if (this.config.method !== 'esc-pos') {
+        console.log('Falling back to browser print')
+        this.printBrowserFallback(receiptData)
+        return true
+      }
+      
+      // For ESC-POS, throw the error instead of falling back
+      throw error
     }
   }
 

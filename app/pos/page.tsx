@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { ReceiptPrinterProvider, useReceiptPrinter } from '@/contexts/ReceiptPrinterContext'
 import { Button } from '@/components/ui/button'
@@ -31,11 +31,16 @@ interface CartItem {
 
 function POSPageContent() {
   const { isAuthorized, isLoading, branchId, user } = useAuth('cashier')
-  const { printReceipt, isWebSerialSupported, isConnected, connectPrinter } = useReceiptPrinter()
+  const { printReceipt, isConnected, connectPrinter, setMethod } = useReceiptPrinter()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [isStaffCheckout, setIsStaffCheckout] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // Set ESC-POS method for cashier devices (thermal printers)
+  React.useEffect(() => {
+    setMethod('esc-pos')
+  }, [])
 
   // Cart management functions
   const addToCart = (product: {
@@ -290,7 +295,7 @@ function POSPageContent() {
                   </div>
 
                   {/* Printer Status */}
-                  {isWebSerialSupported && (
+                  <React.Fragment>
                     <div className="mb-3 p-2 bg-gray-50 rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {isConnected ? (
@@ -299,7 +304,7 @@ function POSPageContent() {
                           <Printer className="h-4 w-4 text-gray-500" />
                         )}
                         <span className="text-sm">
-                          Receipt Printer: {isConnected ? 'Connected' : 'Not Connected'}
+                          Thermal Printer: {isConnected ? 'Connected' : 'Not Connected'}
                         </span>
                       </div>
                       {!isConnected && (
@@ -313,7 +318,7 @@ function POSPageContent() {
                         </Button>
                       )}
                     </div>
-                  )}
+                  </React.Fragment>
 
                   {/* Payment Button */}
                   <Button
