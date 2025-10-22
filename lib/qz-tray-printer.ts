@@ -176,15 +176,14 @@ export class QZTrayPrinter {
     }
 
     try {
-      // Create ESC/POS commands for thermal printer
-      const commands = this.buildESCPOSCommands(receiptData)
-      
       const config = qz.configs.create(this.selectedPrinter)
       
+      // Use plain text for ALL printers (no ESC/POS commands)
+      const plainText = this.buildPlainTextReceipt(receiptData)
       const data = [{
         type: 'raw' as const,
-        format: 'command' as const,
-        data: commands
+        format: 'plain' as const,
+        data: plainText
       }]
 
       await qz.print(config, data)
@@ -195,108 +194,95 @@ export class QZTrayPrinter {
     }
   }
 
-  // Build ESC/POS commands for thermal printer
-  private buildESCPOSCommands(receiptData: ReceiptData): string[] {
-    const commands: string[] = []
-    
-    // ESC/POS command constants
-    const ESC = '\x1B'
-    const GS = '\x1D'
-    
-    // Initialize printer
-    commands.push(ESC + '@')
-    
-    // Header - Center aligned, bold, double height
-    commands.push(ESC + 'a' + '1') // Center align
-    commands.push(GS + '!' + '\x11') // Double size
-    commands.push(ESC + 'E' + '1') // Bold on
-    commands.push('GROCERY STORE\n')
-    
-    // Normal size, still bold
-    commands.push(GS + '!' + '\x00') // Normal size
-    commands.push(`${receiptData.branchName}\n`)
-    commands.push(ESC + 'E' + '0') // Bold off
-    commands.push('POS & Inventory Management\n\n')
 
-    // Transaction details - Left aligned
-    commands.push(ESC + 'a' + '0') // Left align
-    commands.push('--------------------------------\n')
-    commands.push(`Receipt #: ${receiptData.transactionNumber}\n`)
-    commands.push(`Date: ${receiptData.date}\n`)
-    commands.push(`Time: ${receiptData.time}\n`)
-    commands.push(`Cashier: ${receiptData.cashierName}\n`)
+  // Build plain text receipt for office printers
+  private buildPlainTextReceipt(receiptData: ReceiptData): string {
+    const lines: string[] = []
+    const width = 48 // Adjust for office printer width
+    
+    // Helper function to center text
+    const centerText = (text: string): string => {
+      const padding = Math.max(0, Math.floor((width - text.length) / 2))
+      return ' '.repeat(padding) + text
+    }
+    
+    // Helper function to justify text (left-right)
+    const justifyText = (left: string, right: string): string => {
+      const totalLength = left.length + right.length
+      if (totalLength >= width) {
+        return (left + right).substring(0, width)
+      }
+      const spaces = ' '.repeat(width - totalLength)
+      return left + spaces + right
+    }
+    
+    // Header
+    lines.push(centerText('GROCERY STORE'))
+    lines.push(centerText(receiptData.branchName))
+    
+    // Transaction details
+    lines.push(''.padEnd(width, '-'))
+    lines.push(justifyText('Receipt #:', receiptData.transactionNumber))
+    lines.push(justifyText('Date:', receiptData.date))
+    lines.push(justifyText('Time:', receiptData.time))
+    lines.push(justifyText('Cashier:', receiptData.cashierName))
     
     if (receiptData.isStaffCheckout) {
-      commands.push(ESC + 'a' + '1') // Center align
-      commands.push(ESC + 'E' + '1') // Bold on
-      commands.push('*** STAFF PURCHASE ***\n')
-      commands.push(ESC + 'E' + '0') // Bold off
-      commands.push(ESC + 'a' + '0') // Left align
+      lines.push(centerText('*** STAFF PURCHASE ***'))
     }
     
-    commands.push('--------------------------------\n')
-
+    lines.push(''.padEnd(width, '-'))
+    
     // Items header
-    commands.push(ESC + 'E' + '1') // Bold on
-    commands.push('ITEM                QTY  PRICE  TOTAL\n')
-    commands.push(ESC + 'E' + '0') // Bold off
-    commands.push('--------------------------------\n')
-
+    lines.push(`ITEM${' '.repeat(20)}QTY  PRICE    TOTAL`)
+    lines.push(''.padEnd(width, '-'))
+    
     // Items
     for (const item of receiptData.items) {
-      // Item name (English) - Bold
-      commands.push(ESC + 'E' + '1')
-      commands.push(`${item.name_en.substring(0, 32)}\n`)
-      commands.push(ESC + 'E' + '0')
+      // Item name (English only - skip Myanmar for office printers)
+      lines.push(item.name_en.substring(0, width))
       
-      // Item name (Myanmar)
-      commands.push(`${item.name_mm.substring(0, 32)}\n`)
-      
-      // Quantity, price, and total - Right aligned
-      const qtyPriceTotal = `${item.quantity.toString().padStart(3)}  RM${item.price.toFixed(2).padStart(6)}  RM${item.total.toFixed(2)}`
-      commands.push(ESC + 'a' + '2') // Right align
-      commands.push(`${qtyPriceTotal}\n`)
-      commands.push(ESC + 'a' + '0') // Left align
-      commands.push('\n')
+      // Quantity, price, and total
+      const qtyStr = item.quantity.toString().padStart(3)
+      const priceStr = `RM${item.price.toFixed(2)}`.padStart(8)
+      const totalStr = `RM${item.total.toFixed(2)}`
+      const itemLine = `${' '.repeat(24)}${qtyStr}  ${priceStr}  ${totalStr}`
+      lines.push(itemLine)
     }
-
+    
     // Total
-    commands.push('--------------------------------\n')
-    commands.push(ESC + 'a' + '2') // Right align
-    commands.push(GS + '!' + '\x11') // Double size
-    commands.push(ESC + 'E' + '1') // Bold on
-    commands.push(`TOTAL: RM ${receiptData.total.toFixed(2)}\n`)
-    commands.push(GS + '!' + '\x00') // Normal size
-    commands.push(ESC + 'E' + '0') // Bold off
-    commands.push(ESC + 'a' + '0') // Left align
+    lines.push(''.padEnd(width, '-'))
+    const totalLine = justifyText('TOTAL:', `RM ${receiptData.total.toFixed(2)}`)
+    lines.push(totalLine)
+    lines.push(''.padEnd(width, '-'))
     
-    commands.push('--------------------------------\n')
-
     // Payment method
-    commands.push(`Payment: ${receiptData.paymentMethod.toUpperCase()}\n`)
-    commands.push('--------------------------------\n')
-
-    // Footer - Center aligned
-    commands.push(ESC + 'a' + '1') // Center align
-    commands.push('\n')
-    commands.push('Thank you for your purchase!\n')
-    commands.push('Please keep this receipt\n')
-    commands.push('for your records\n')
-    commands.push('Visit us again soon!\n')
-    commands.push('\n')
-    commands.push('--------------------------------\n')
-    commands.push('Generated by Grocery Store POS\n')
+    lines.push(justifyText('Payment:', receiptData.paymentMethod.toUpperCase()))
+    lines.push(''.padEnd(width, '-'))
     
-    // Extra spacing and cut paper
-    commands.push('\n\n\n')
-    commands.push(GS + 'V' + 'A' + '0') // Cut paper
-
-    return commands
+    // Footer
+    lines.push(centerText('Thank you for your purchase!'))
+    lines.push(centerText('Please keep this receipt'))
+    lines.push(centerText('for your records'))
+    lines.push(centerText('Visit us again soon!'))
+    lines.push('')
+    lines.push('')
+    lines.push('')
+    lines.push('')
+    lines.push('')
+    lines.push('')
+    lines.push('')
+    lines.push('')
+    lines.push('')
+    
+    
+    return lines.join('\n')
   }
+
 
   // Browser fallback printing
   private printBrowserFallback(receiptData: ReceiptData): void {
-    const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes')
+    const printWindow = window.open('', '_blank', 'width=400,scrollbars=yes,resizable=yes')
     if (!printWindow) {
       alert('Please allow popups for this site to print receipts')
       return
@@ -344,17 +330,32 @@ export class QZTrayPrinter {
               font-weight: bold;
             }
             @media print {
-              body { margin: 0; padding: 5mm; }
-              @page { size: 80mm auto; margin: 0; }
+              body { 
+                margin: 0; 
+                padding: 0; 
+                width: 80mm;
+                font-size: 12px;
+              }
+              @page { 
+                size: 80mm auto; 
+                margin: 0; 
+              }
+              .receipt {
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
+              * {
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
             }
           </style>
         </head>
         <body>
           <div class="receipt">
             <div class="center mb-4">
-              <div class="bold large">GROCERY STORE</div>
+              <div class="mb-1">GROCERY STORE</div>
               <div class="mb-1">${receiptData.branchName}</div>
-              <div class="small">POS & Inventory Management</div>
             </div>
 
             <div class="mb-4 dashed pb-2">
@@ -388,7 +389,6 @@ export class QZTrayPrinter {
               ${receiptData.items.map(item => `
                 <div class="mb-3">
                   <div class="bold mb-1">${item.name_en}</div>
-                  <div class="small mb-1">${item.name_mm}</div>
                   <div class="flex small">
                     <span style="width: 40%"></span>
                     <span style="width: 15%; text-align: center">${item.quantity}</span>
@@ -417,7 +417,6 @@ export class QZTrayPrinter {
               <div class="mb-1">Thank you for your purchase!</div>
               <div class="mb-1">Please keep this receipt for your records</div>
               <div class="mb-3">Visit us again soon!</div>
-              <div class="small solid pt-2">Generated by Grocery Store POS System</div>
             </div>
           </div>
           
@@ -438,17 +437,8 @@ export class QZTrayPrinter {
     if (this.config.method === 'web-serial' && this.isConnected) {
       await this.webSerialPrinter.openCashDrawer()
     } else if (this.config.method === 'qz-tray' && this.selectedPrinter) {
-      try {
-        const config = qz.configs.create(this.selectedPrinter)
-        const data = [{
-          type: 'raw' as const,
-          format: 'command' as const,
-          data: ['\x1Bp\x00\x19\xFA'] // Standard cash drawer command
-        }]
-        await qz.print(config, data)
-      } catch (error) {
-        console.error('Failed to open cash drawer:', error)
-      }
+      // Cash drawer functionality not available for plain text mode
+      console.warn('Cash drawer not supported in plain text mode')
     }
   }
 
