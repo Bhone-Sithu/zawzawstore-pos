@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { BarcodeInput } from '@/components/ui/barcode-input'
@@ -11,6 +12,7 @@ import Pagination from '@/components/ui/pagination'
 import { useProductsPagination } from '@/hooks/use-products-pagination'
 import type { ProductWithCategory } from '@/services/product-service'
 import { useReceiptPrinter } from '@/contexts/ReceiptPrinterContext'
+import { QuantityDialog } from '@/components/ui/quantity-dialog'
 import { Loader2, Edit, Trash2, Search, Printer } from 'lucide-react'
 
 interface ProductListProps {
@@ -40,25 +42,57 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
   } = useProductsPagination(refreshTrigger)
 
   const { printBarcodeSticker, isConnected, currentMethod, connectPrinter } = useReceiptPrinter()
+  const [quantityDialog, setQuantityDialog] = useState<{
+    isOpen: boolean
+    product: ProductWithCategory | null
+    printing: boolean
+  }>({
+    isOpen: false,
+    product: null,
+    printing: false
+  })
 
-  const handlePrintSticker = async (product: ProductWithCategory) => {
+  const handlePrintSticker = (product: ProductWithCategory) => {
     console.log('Print button clicked for product:', product.name_en)
-    console.log('Printer status - Connected:', isConnected, 'Method:', currentMethod)
+    setQuantityDialog({
+      isOpen: true,
+      product,
+      printing: false
+    })
+  }
+
+  const handleQuantityConfirm = async (quantity: number) => {
+    if (!quantityDialog.product) return
+    
+    setQuantityDialog(prev => ({ ...prev, printing: true }))
     
     try {
+      console.log(`Printing ${quantity} stickers for:`, quantityDialog.product.name_en)
+      console.log('Printer status - Connected:', isConnected, 'Method:', currentMethod)
+      
       const result = await printBarcodeSticker({
-        name_en: product.name_en,
-        base_price: product.base_price,
-        barcode: product.barcode
-      })
+        name_en: quantityDialog.product.name_en,
+        base_price: quantityDialog.product.base_price,
+        barcode: quantityDialog.product.barcode
+      }, quantity)
+      
       console.log('Print result:', result)
       
       if (result) {
-        alert('Sticker printed successfully!')
+        alert(`${quantity} sticker${quantity > 1 ? 's' : ''} printed successfully!`)
       }
+      
+      setQuantityDialog({ isOpen: false, product: null, printing: false })
     } catch (error) {
       console.error('Failed to print barcode sticker:', error)
       alert(`Printing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setQuantityDialog(prev => ({ ...prev, printing: false }))
+    }
+  }
+
+  const handleQuantityCancel = () => {
+    if (!quantityDialog.printing) {
+      setQuantityDialog({ isOpen: false, product: null, printing: false })
     }
   }
 
@@ -277,6 +311,15 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
           </div>
         )}
       </CardContent>
+
+      {/* Quantity Dialog */}
+      <QuantityDialog
+        isOpen={quantityDialog.isOpen}
+        onClose={handleQuantityCancel}
+        onConfirm={handleQuantityConfirm}
+        productName={quantityDialog.product?.name_en || ''}
+        loading={quantityDialog.printing}
+      />
     </Card>
   )
 }

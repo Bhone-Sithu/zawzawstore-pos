@@ -468,14 +468,14 @@ export class QZTrayPrinter {
   }
 
   // Print barcode sticker using QZ Tray
-  async printBarcodeSticker(product: { name_en: string; base_price: number; barcode: string }): Promise<boolean> {
+  async printBarcodeSticker(product: { name_en: string; base_price: number; barcode: string }, quantity: number = 1): Promise<boolean> {
     try {
       switch (this.config.method) {
         case 'qz-tray':
           if (!this.isConnected) {
             await this.connect()
           }
-          return await this.printStickerWithQZTray(product)
+          return await this.printStickerWithQZTray(product, quantity)
 
         case 'browser-fallback':
           this.printStickerBrowserFallback(product)
@@ -496,7 +496,7 @@ export class QZTrayPrinter {
   }
 
   // Print barcode sticker using QZ Tray 
-  private async printStickerWithQZTray(product: { name_en: string; base_price: number; barcode: string }): Promise<boolean> {
+  private async printStickerWithQZTray(product: { name_en: string; base_price: number; barcode: string }, quantity: number = 1): Promise<boolean> {
     if (!this.selectedPrinter) {
       throw new Error('No printer selected')
     }
@@ -510,7 +510,7 @@ export class QZTrayPrinter {
       
       if (isTSCPrinter) {
         // Use TSC commands for label printing
-        const tscCommands = this.buildTSCLabelCommands(product)
+        const tscCommands = this.buildTSCLabelCommands(product, quantity)
         const data = [{
           type: 'raw' as const,
           format: 'command' as const,
@@ -573,7 +573,7 @@ export class QZTrayPrinter {
   }
 
   // Build TSC label commands for barcode sticker
-  private buildTSCLabelCommands(product: { name_en: string; base_price: number; barcode: string }): string {
+  private buildTSCLabelCommands(product: { name_en: string; base_price: number; barcode: string }, quantity: number = 1): string {
     const commands: string[] = []
     
     // TSC Label Setup (30mm width x 25mm height)
@@ -605,7 +605,7 @@ export class QZTrayPrinter {
     commands.push(`BARCODE 2,120,"128",60,1,0,2,2,"${product.barcode}"`)
     
     // Print command
-    commands.push('PRINT 1,1')  // Print 1 copy
+    commands.push(`PRINT ${quantity},1`)  // Print specified quantity
     
     // Join commands with line feeds
     return `${commands.join('\n')}\n`

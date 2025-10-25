@@ -11,7 +11,7 @@ interface ReceiptPrinterContextType {
   connectPrinter: () => Promise<boolean>
   disconnectPrinter: () => Promise<void>
   printReceipt: (data: ReceiptData) => Promise<boolean>
-  printBarcodeSticker: (product: { name_en: string; base_price: number; barcode: string }) => Promise<boolean>
+  printBarcodeSticker: (product: { name_en: string; base_price: number; barcode: string }, quantity?: number) => Promise<boolean>
   openCashDrawer: () => Promise<void>
   isWebSerialSupported: boolean
   isQZTraySupported: boolean
@@ -96,12 +96,12 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     }
   }
 
-  const printBarcodeSticker = async (product: { name_en: string; base_price: number; barcode: string }): Promise<boolean> => {
+  const printBarcodeSticker = async (product: { name_en: string; base_price: number; barcode: string }, quantity: number = 1): Promise<boolean> => {
     console.log('printBarcodeSticker called with:', product)
     console.log('Printer method:', printer.getCurrentMethod(), 'Connected:', isConnected)
     
     try {
-      const result = await printer.printBarcodeSticker(product)
+      const result = await printer.printBarcodeSticker(product, quantity)
       console.log('Printer result:', result)
       return result
     } catch (error) {
@@ -112,7 +112,7 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
       try {
         // Force browser fallback printing
         printer.setConfig({ ...printer.getConfig(), method: 'browser-fallback' })
-        const fallbackResult = await printer.printBarcodeSticker(product)
+        const fallbackResult = await printer.printBarcodeSticker(product, quantity)
         console.log('Browser fallback result:', fallbackResult)
         return fallbackResult
       } catch (fallbackError) {
