@@ -11,6 +11,7 @@ interface ReceiptPrinterContextType {
   connectPrinter: () => Promise<boolean>
   disconnectPrinter: () => Promise<void>
   printReceipt: (data: ReceiptData) => Promise<boolean>
+  printBarcodeSticker: (product: { name_en: string; base_price: number; barcode: string }) => Promise<boolean>
   openCashDrawer: () => Promise<void>
   isWebSerialSupported: boolean
   isQZTraySupported: boolean
@@ -95,6 +96,39 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     }
   }
 
+  const printBarcodeSticker = async (product: { name_en: string; base_price: number; barcode: string }): Promise<boolean> => {
+    console.log('printBarcodeSticker called with:', product)
+    console.log('Printer method:', printer.getCurrentMethod(), 'Connected:', isConnected)
+    
+    try {
+      const result = await printer.printBarcodeSticker(product)
+      console.log('Printer result:', result)
+      return result
+    } catch (error) {
+      console.error('Failed to print barcode sticker:', error)
+      
+      // Always try browser fallback if QZ Tray fails
+      console.log('Attempting browser fallback for sticker printing...')
+      try {
+        // Force browser fallback printing
+        printer.setConfig({ ...printer.getConfig(), method: 'browser-fallback' })
+        const fallbackResult = await printer.printBarcodeSticker(product)
+        console.log('Browser fallback result:', fallbackResult)
+        return fallbackResult
+      } catch (fallbackError) {
+        console.error('Browser fallback also failed:', fallbackError)
+        
+        // Show user-friendly error message
+        if (error instanceof Error) {
+          alert(`Sticker Printing Failed:\n\n${error.message}`)
+        } else {
+          alert('Failed to print barcode sticker. Please check your printer connection.')
+        }
+        return false
+      }
+    }
+  }
+
   const openCashDrawer = async (): Promise<void> => {
     if (isConnected) {
       await printer.openCashDrawer()
@@ -142,6 +176,7 @@ export function ReceiptPrinterProvider({ children }: ReceiptPrinterProviderProps
     connectPrinter,
     disconnectPrinter,
     printReceipt,
+    printBarcodeSticker,
     openCashDrawer,
     isWebSerialSupported,
     isQZTraySupported,

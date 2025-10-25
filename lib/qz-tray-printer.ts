@@ -466,6 +466,196 @@ export class QZTrayPrinter {
   getSelectedPrinter(): string | null {
     return this.selectedPrinter
   }
+
+  // Print barcode sticker using QZ Tray
+  async printBarcodeSticker(product: { name_en: string; base_price: number; barcode: string }): Promise<boolean> {
+    try {
+      switch (this.config.method) {
+        case 'qz-tray':
+          if (!this.isConnected) {
+            await this.connect()
+          }
+          return await this.printStickerWithQZTray(product)
+
+        case 'browser-fallback':
+          this.printStickerBrowserFallback(product)
+          return true
+
+        default:
+          // For web-serial, fall back to browser printing
+          this.printStickerBrowserFallback(product)
+          return true
+      }
+    } catch (error) {
+      console.error('Failed to print barcode sticker:', error)
+      
+      // Fallback to browser print for all methods if QZ Tray fails
+      this.printStickerBrowserFallback(product)
+      return true
+    }
+  }
+
+  // Print barcode sticker using QZ Tray 
+  private async printStickerWithQZTray(product: { name_en: string; base_price: number; barcode: string }): Promise<boolean> {
+    if (!this.selectedPrinter) {
+      throw new Error('No printer selected')
+    }
+
+    try {
+      const config = qz.configs.create(this.selectedPrinter)
+      
+      // Check if this is a TSC label printer
+      const isTSCPrinter = this.selectedPrinter.toLowerCase().includes('tsc') || 
+                          this.selectedPrinter.toLowerCase().includes('ttp')
+      
+      if (isTSCPrinter) {
+        // Use TSC commands for label printing
+        const tscCommands = this.buildTSCLabelCommands(product)
+        const data = [{
+          type: 'raw' as const,
+          format: 'command' as const,
+          data: tscCommands
+        }]
+        
+        console.log('Sending TSC commands to printer:', tscCommands)
+        await qz.print(config, data)
+        return true
+      } else {
+        // Use plain text for other printers
+        const lines: string[] = []
+        const width = 32
+        
+        // Helper function to center text
+        const centerText = (text: string): string => {
+          const padding = Math.max(0, Math.floor((width - text.length) / 2))
+          return ' '.repeat(padding) + text
+        }
+        
+        // Sticker content
+        lines.push(''.padEnd(width, '-'))
+        lines.push(centerText('GROCERY STORE'))
+        lines.push(''.padEnd(width, '-'))
+        lines.push('')
+        
+        // Product name (truncate if too long)
+        const productName = product.name_en.length > width ? `${product.name_en.substring(0, width-3)}...` : product.name_en
+        lines.push(centerText(productName))
+        lines.push('')
+        
+        // Price
+        lines.push(centerText(`RM ${product.base_price.toFixed(2)}`))
+        lines.push('')
+        
+        // Barcode number
+        lines.push(centerText(product.barcode))
+        lines.push('')
+        lines.push(''.padEnd(width, '-'))
+        
+        // Extra spacing for cutting
+        lines.push('')
+        lines.push('')
+        lines.push('')
+        
+        const plainText = lines.join('\n')
+        const data = [{
+          type: 'raw' as const,
+          format: 'plain' as const,
+          data: plainText
+        }]
+
+        await qz.print(config, data)
+        return true
+      }
+    } catch (error) {
+      console.error('Error printing sticker with QZ Tray:', error)
+      throw new Error(`Failed to print sticker to ${this.selectedPrinter}. Please check the printer connection.`)
+    }
+  }
+
+  // Build TSC label commands for barcode sticker
+  private buildTSCLabelCommands(product: { name_en: string; base_price: number; barcode: string }): string {
+    const commands: string[] = []
+    
+    // TSC Label Setup (30mm width x 25mm height)
+    commands.push('SIZE 30 mm, 25 mm')  // Label size
+    commands.push('GAP 2 mm, 0 mm')     // Gap between labels
+    commands.push('DIRECTION 1,0')      // Print direction
+    commands.push('REFERENCE 0,0')      // Reference point
+    commands.push('OFFSET 0 mm')        // Offset
+    commands.push('SET PEEL OFF')       // Peel mode
+    commands.push('SET CUTTER OFF')     // Cutter mode
+    commands.push('SET PARTIAL_CUTTER OFF')
+    commands.push('SET TEAR ON')        // Tear mode
+    commands.push('CLS')                // Clear label buffer
+    
+    // Header - GROCERY STORE (centered, larger font, moved down)
+    // TEXT x,y,"font",rotation,x_scale,y_scale,"text"
+    
+    // Product name (centered, medium font, moved down)
+    const maxProductLength = 18
+    const productName = product.name_en.length > maxProductLength ? 
+      `${product.name_en.substring(0, maxProductLength-3)}...` : product.name_en
+    commands.push(`TEXT 5,60,"2",0,1,1,"${productName}"`)
+    
+    // Price (centered, medium font, moved down)
+    commands.push(`TEXT 70,85,"3",0,1,1,"RM ${product.base_price.toFixed(2)}"`)
+    
+    // Barcode (Code 128, centered and bigger, moved down)
+    // BARCODE x,y,"code_type",height,human_readable,rotation,narrow,wide,"data"
+    commands.push(`BARCODE 2,120,"128",60,1,0,2,2,"${product.barcode}"`)
+    
+    // Print command
+    commands.push('PRINT 1,1')  // Print 1 copy
+    
+    // Join commands with line feeds
+    return `${commands.join('\n')}\n`
+  }
+
+  // Browser fallback for barcode sticker printing
+  private printStickerBrowserFallback(product: { name_en: string; base_price: number; barcode: string }): void {
+    const printWindow = window.open('', '_blank', 'width=400,scrollbars=yes,resizable=yes')
+    if (!printWindow) {
+      alert('Please allow popups for this site to print stickers')
+      return
+    }
+
+    const stickerHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Barcode Sticker - ${product.name_en}</title>
+          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.2; margin: 0; padding: 10px; width: 300px; background: white; }
+            .sticker { width: 30mm; height: 25mm; border: 1px solid #000; padding: 1mm; display: flex; flex-direction: column; justify-content: space-between; background: white; page-break-inside: avoid; break-inside: avoid; }
+            .product-name { font-size: 7px; font-weight: bold; text-align: center; line-height: 1.1; margin-bottom: 1mm; overflow: hidden; }
+            .price { font-size: 8px; font-weight: bold; text-align: center; margin-bottom: 1mm; color: #000; }
+            .barcode-container { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
+            @media print { body { margin: 0; padding: 0; width: 30mm; font-size: 12px; } @page { size: 30mm 25mm; margin: 0; } .sticker { page-break-inside: avoid; break-inside: avoid; border: none; margin: 0; padding: 1mm; } * { page-break-inside: avoid; break-inside: avoid; } }
+          </style>
+        </head>
+        <body>
+          <div class="sticker">
+            <div class="product-name">${product.name_en}</div>
+            <div class="price">RM ${product.base_price.toFixed(2)}</div>
+            <div class="barcode-container">
+              <svg id="barcode"></svg>
+            </div>
+          </div>
+          <script>
+            window.addEventListener('load', function() {
+              JsBarcode("#barcode", "${product.barcode}", { format: "CODE128", width: 1, height: 15, displayValue: true, fontSize: 6, textAlign: "center", margin: 1 });
+              setTimeout(function() { window.print(); setTimeout(() => window.close(), 1000); }, 300);
+            });
+          </script>
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(stickerHTML)
+    printWindow.document.close()
+  }
 }
 
 // Singleton instance

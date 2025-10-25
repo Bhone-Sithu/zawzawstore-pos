@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge'
 import Pagination from '@/components/ui/pagination'
 import { useProductsPagination } from '@/hooks/use-products-pagination'
 import type { ProductWithCategory } from '@/services/product-service'
-import { Loader2, Edit, Trash2, Search } from 'lucide-react'
+import { useReceiptPrinter } from '@/contexts/ReceiptPrinterContext'
+import { Loader2, Edit, Trash2, Search, Printer } from 'lucide-react'
 
 interface ProductListProps {
   onEditProduct: (product: ProductWithCategory) => void
@@ -37,6 +38,29 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
     showingTo,
     totalCount
   } = useProductsPagination(refreshTrigger)
+
+  const { printBarcodeSticker, isConnected, currentMethod, connectPrinter } = useReceiptPrinter()
+
+  const handlePrintSticker = async (product: ProductWithCategory) => {
+    console.log('Print button clicked for product:', product.name_en)
+    console.log('Printer status - Connected:', isConnected, 'Method:', currentMethod)
+    
+    try {
+      const result = await printBarcodeSticker({
+        name_en: product.name_en,
+        base_price: product.base_price,
+        barcode: product.barcode
+      })
+      console.log('Print result:', result)
+      
+      if (result) {
+        alert('Sticker printed successfully!')
+      }
+    } catch (error) {
+      console.error('Failed to print barcode sticker:', error)
+      alert(`Printing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
 
   if (loading) {
     return (
@@ -109,6 +133,37 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
           </div>
         </div>
 
+        {/* Printer Status Bar */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {isConnected ? (
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                ) : (
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                )}
+                <span className="text-sm font-medium">
+                  Printer Status: {isConnected ? 'Connected' : 'Not Connected'}
+                </span>
+              </div>
+              <span className="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded">
+                Method: {currentMethod.replace('-', ' ').toUpperCase()}
+              </span>
+            </div>
+            {!isConnected && (
+              <Button
+                onClick={connectPrinter}
+                size="sm"
+                className="bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
+              >
+                <Printer className="h-4 w-4 mr-1" />
+                Connect Printer
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Products Table */}
         <CardContent className="p-0">
           <div className="overflow-hidden rounded-lg border border-gray-200">
@@ -166,6 +221,15 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
                     </TableCell>
                     <TableCell className="py-4 px-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePrintSticker(product)}
+                          className="h-8 px-3 bg-orange-50 cursor-pointer border-orange-200 text-orange-600 hover:bg-orange-100 hover:border-orange-300 hover:text-orange-700 transition-all duration-200"
+                        >
+                          <Printer className="h-4 w-4 mr-1" />
+                          Print
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
