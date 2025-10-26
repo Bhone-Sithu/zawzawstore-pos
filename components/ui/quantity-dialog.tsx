@@ -55,7 +55,7 @@ export function QuantityDialog({
         <DialogHeader>
           <DialogTitle>Print Barcode Stickers</DialogTitle>
           <DialogDescription>
-            How many stickers would you like to print for "{productName}"?
+            How many stickers would you like to print for &quot;{productName}&quot;?
           </DialogDescription>
         </DialogHeader>
         
