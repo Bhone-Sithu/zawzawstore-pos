@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { supabase } from '@/lib/supabase'
 import { Card, CardContent } from '@/components/ui/card'
 import { BarcodeInput } from '@/components/ui/barcode-input'
 import { Button } from '@/components/ui/button'
@@ -13,7 +14,7 @@ import { useProductsPagination } from '@/hooks/use-products-pagination'
 import type { ProductWithCategory } from '@/services/product-service'
 import { useReceiptPrinter } from '@/contexts/ReceiptPrinterContext'
 import { QuantityDialog } from '@/components/ui/quantity-dialog'
-import { Loader2, Edit, Trash2, Search, Printer } from 'lucide-react'
+import { Loader2, Edit, Trash2, Search, Printer, Download } from 'lucide-react'
 
 interface ProductListProps {
   onEditProduct: (product: ProductWithCategory) => void
@@ -96,6 +97,74 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
     }
   }
 
+  const exportToCSV = async () => {
+    try {
+      // Fetch all products from database
+      const { data: allProducts, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories (
+            id,
+            name_en,
+            name_mm
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching products for export:', error)
+        alert('Failed to export products. Please try again.')
+        return
+      }
+
+      const headers = [
+        'Barcode',
+        'Product Name (English)',
+        'Product Name (Myanmar)',
+        'Category',
+        'Supplier Price',
+        'Base Price',
+        'Status',
+        'Created Date'
+      ]
+
+      const csvData = allProducts.map(product => [
+        product.barcode,
+        product.name_en,
+        product.name_mm,
+        product.categories?.name_en || 'No Category',
+        product.supplier_price ? product.supplier_price.toFixed(2) : 'Not set',
+        product.base_price.toFixed(2),
+        product.is_active ? 'Active' : 'Inactive',
+        new Date(product.created_at).toLocaleDateString()
+      ])
+
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n')
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        link.setAttribute('download', `all_products_${new Date().toISOString().split('T')[0]}.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+
+      alert(`Successfully exported ${allProducts.length} products to CSV!`)
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Failed to export products. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <Card>
@@ -164,6 +233,15 @@ export default function ProductList({ onEditProduct, onDeleteProduct, refreshTri
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              onClick={exportToCSV}
+              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+              size="default"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
           </div>
         </div>
 

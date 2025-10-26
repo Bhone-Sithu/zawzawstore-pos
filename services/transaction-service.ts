@@ -247,3 +247,127 @@ export async function getTodaysSales(branchId: string): Promise<{
     averageTransaction
   }
 }
+
+// Get all transactions for admin (with filters)
+export async function getAllTransactions(
+  page = 1,
+  limit = 20,
+  filters?: {
+    branchId?: string
+    cashierId?: string
+    paymentMethod?: string
+    transactionNumber?: string
+    startDate?: string
+    endDate?: string
+    staffCheckout?: boolean
+  }
+): Promise<{
+  transactions: (TransactionWithItems & { 
+    users?: { name: string } 
+    branches?: { name: string; location: string }
+  })[]
+  totalCount: number
+  totalPages: number
+}> {
+  const offset = (page - 1) * limit
+
+  let query = supabase
+    .from('transactions')
+    .select(`
+      *,
+      transaction_items (
+        id,
+        product_id,
+        quantity,
+        unit_price,
+        total_price,
+        created_at,
+        products (
+          name_en,
+          name_mm,
+          barcode
+        )
+      ),
+      users!cashier_id (
+        name
+      ),
+      branches (
+        name,
+        location
+      )
+    `)
+
+  // Apply filters
+  if (filters?.branchId && filters.branchId !== 'all') {
+    query = query.eq('branch_id', filters.branchId)
+  }
+  if (filters?.cashierId) {
+    query = query.eq('cashier_id', filters.cashierId)
+  }
+  if (filters?.paymentMethod && filters.paymentMethod !== 'all') {
+    query = query.eq('payment_method', filters.paymentMethod)
+  }
+  if (filters?.transactionNumber) {
+    query = query.ilike('transaction_number', `%${filters.transactionNumber}%`)
+  }
+  if (filters?.startDate) {
+    query = query.gte('created_at', `${filters.startDate}T00:00:00.000Z`)
+  }
+  if (filters?.endDate) {
+    query = query.lte('created_at', `${filters.endDate}T23:59:59.999Z`)
+  }
+  if (filters?.staffCheckout !== undefined) {
+    query = query.eq('staff_checkout', filters.staffCheckout)
+  }
+
+  const { data: transactions, error } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    throw new Error(`Failed to fetch transactions: ${error.message}`)
+  }
+
+  // Get total count with same filters
+  let countQuery = supabase
+    .from('transactions')
+    .select('*', { count: 'exact', head: true })
+
+  // Apply same filters for count
+  if (filters?.branchId && filters.branchId !== 'all') {
+    countQuery = countQuery.eq('branch_id', filters.branchId)
+  }
+  if (filters?.cashierId) {
+    countQuery = countQuery.eq('cashier_id', filters.cashierId)
+  }
+  if (filters?.paymentMethod && filters.paymentMethod !== 'all') {
+    countQuery = countQuery.eq('payment_method', filters.paymentMethod)
+  }
+  if (filters?.transactionNumber) {
+    countQuery = countQuery.ilike('transaction_number', `%${filters.transactionNumber}%`)
+  }
+  if (filters?.startDate) {
+    countQuery = countQuery.gte('created_at', `${filters.startDate}T00:00:00.000Z`)
+  }
+  if (filters?.endDate) {
+    countQuery = countQuery.lte('created_at', `${filters.endDate}T23:59:59.999Z`)
+  }
+  if (filters?.staffCheckout !== undefined) {
+    countQuery = countQuery.eq('staff_checkout', filters.staffCheckout)
+  }
+
+  const { count, error: countError } = await countQuery
+
+  if (countError) {
+    throw new Error(`Failed to get transaction count: ${countError.message}`)
+  }
+
+  const totalCount = count || 0
+  const totalPages = Math.ceil(totalCount / limit)
+
+  return {
+    transactions: transactions || [],
+    totalCount,
+    totalPages
+  }
+}
