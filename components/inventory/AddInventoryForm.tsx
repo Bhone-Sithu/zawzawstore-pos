@@ -5,7 +5,8 @@ import { supabase } from '@/lib/supabase'
 import { BarcodeInput } from '@/components/ui/barcode-input'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Package, AlertTriangle, CheckCircle, X } from 'lucide-react'
@@ -209,21 +210,29 @@ export default function AddInventoryForm({ onSuccess, onCancel, selectedBranchId
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Branch Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               Branch *
             </label>
-            <Select value={branchId} onValueChange={setBranchId} required>
-              <SelectTrigger className="cursor-pointer">
-                <SelectValue placeholder="Select branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id} className="cursor-pointer">
-                    {branch.name} - {branch.location}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <RadioGroup value={branchId} onValueChange={setBranchId} className="space-y-3">
+              {branches.map(branch => (
+                <div key={branch.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <RadioGroupItem 
+                    value={branch.id} 
+                    id={branch.id}
+                    className="cursor-pointer"
+                  />
+                  <Label 
+                    htmlFor={branch.id} 
+                    className="flex-1 cursor-pointer font-medium text-gray-900"
+                  >
+                    <div>
+                      <p className="font-medium">{branch.name}</p>
+                      <p className="text-sm text-gray-600">{branch.location}</p>
+                    </div>
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
           </div>
 
           {/* Product Search */}
