@@ -1,12 +1,15 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BarcodeInput } from '@/components/ui/barcode-input'
 import { usePOSProducts } from '@/hooks/use-pos-products'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
-import { Plus, Search, ShoppingCart, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
+import { BarcodeScanner } from '@/components/ui/barcode-scanner'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Plus, Search, ShoppingCart, ChevronLeft, ChevronRight, AlertTriangle, Scan } from 'lucide-react'
 
 interface POSProductSearchProps {
   branchId: string
@@ -25,6 +28,8 @@ interface POSProductSearchProps {
 }
 
 export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddToCart }: POSProductSearchProps) {
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
+  
   const {
     products,
     categories,
@@ -83,44 +88,81 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
     }
   }
 
-  // Handle global barcode scan - populate input and trigger search
-  const handleGlobalBarcodeSearch = async (barcode: string) => {
+  // Handle enhanced barcode scanner modal scan
+  const handleEnhancedBarcodeSearch = async (barcode: string) => {
     if (!barcode.trim()) return
     
-    // Set the barcode in the search input
-    setSearchInput(barcode)
-    
-    // Trigger the search automatically
-    setTimeout(() => {
-      handleSearch()
-    }, 100) // Small delay to ensure input is set
+    try {
+      const product = await getProductByBarcode(barcode)
+      if (product) {
+        handleProductAdd(product)
+        setShowBarcodeScanner(false) // Close scanner modal
+      } else {
+        // If not found, set in search input and search
+        setSearchInput(barcode)
+        setShowBarcodeScanner(false)
+        setTimeout(() => {
+          handleSearch()
+        }, 100)
+      }
+    } catch (error) {
+      console.error('Error searching product by barcode:', error)
+    }
   }
 
-  // Global barcode scanner for automatic detection
+  // Handle automatic barcode scan - immediately add to cart or search
+  const handleAutomaticBarcodeSearch = async (barcode: string) => {
+    if (!barcode.trim()) return
+    
+    try {
+      // First, try to find and add the product directly
+      const product = await getProductByBarcode(barcode)
+      if (product) {
+        // Product found - add directly to cart
+        handleProductAdd(product)
+        // Clear search input after successful add
+        setSearchInput('')
+      } else {
+        // Product not found - set in search input and trigger search
+        setSearchInput(barcode)
+        // Automatically trigger search to show "no results" or similar products
+        setTimeout(() => {
+          handleSearch()
+        }, 50) // Shorter delay for immediate feedback
+      }
+    } catch (error) {
+      console.error('Error searching product by barcode:', error)
+      // On error, still set the barcode in search input
+      setSearchInput(barcode)
+    }
+  }
+
+  // Global barcode scanner for automatic detection (keyboard only)
   const { isScanning } = useBarcodeScanner({
-    onScan: handleGlobalBarcodeSearch,
-    enabled: true,
+    onScan: handleAutomaticBarcodeSearch,
+    enabled: !showBarcodeScanner, // Disable when modal is open
     preventDefault: true,
     global: true, // Enable global scanning
-    minLength: 3,
+    minLength: 6, // Most barcodes are at least 6 characters
     maxLength: 50,
-    timeout: 150
+    timeout: 150, // Timeout for clearing buffer
+    scannerSpeed: 30 // Very fast detection for barcode scanners (30ms per char)
   })
 
   return (
     <div className="flex flex-col h-full">
       {/* Barcode Scanning Indicator */}
       {isScanning && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 animate-pulse">
+        <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-3 animate-pulse">
           <div className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-green-600" />
-            <span className="text-green-800 font-medium">Barcode detected - Auto searching...</span>
+            <Scan className="h-5 w-5 text-orange-600" />
+            <span className="text-orange-800 font-medium">Barcode Scanner Active - Processing...</span>
           </div>
           <div className="flex-1" />
           <div className="flex gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
         </div>
       )}
@@ -137,6 +179,14 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
               onScan={handleBarcodeSearch}
             />
           </div>
+          <Button 
+            onClick={() => setShowBarcodeScanner(true)}
+            variant="outline"
+            className="h-12 px-4 border-orange-300 text-orange-600 hover:bg-orange-50 cursor-pointer"
+            title="Open Enhanced Barcode Scanner"
+          >
+            <Scan className="h-5 w-5" />
+          </Button>
           <Button 
             onClick={() => handleSearch()}
             className="h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
@@ -345,6 +395,17 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
           </>
         )}
       </div>
+
+      {/* Enhanced Barcode Scanner Modal */}
+      <Dialog open={showBarcodeScanner} onOpenChange={setShowBarcodeScanner}>
+        <DialogContent className="max-w-md p-0 bg-transparent border-0 shadow-none">
+          <BarcodeScanner
+            onScan={handleEnhancedBarcodeSearch}
+            onClose={() => setShowBarcodeScanner(false)}
+            title="Enhanced Barcode Scanner"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
