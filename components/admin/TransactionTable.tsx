@@ -36,6 +36,7 @@ type TransactionItemWithProduct = TransactionItem & {
 type TransactionWithDetails = TransactionWithItems & { 
   users?: { name: string } 
   branches?: { name: string; location: string }
+  suppliers?: { id: string; name: string; contact_person?: string; phone?: string }
   transaction_items: TransactionItemWithProduct[]
 }
 
@@ -137,6 +138,7 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
       'Discount Amount',
       'Total Amount',
       'Type',
+      'Supplier',
       'Item Details'
     ]
 
@@ -157,6 +159,7 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
         transaction.discount_amount.toFixed(2),
         transaction.total_amount.toFixed(2),
         (transaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout ? 'Supplier' : transaction.staff_checkout ? 'Staff' : 'Customer',
+        (transaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout && transaction.suppliers ? transaction.suppliers.name : '',
         itemDetails
       ]
     })
@@ -388,9 +391,19 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                     </TableCell>
                     <TableCell className="py-4 px-4">
                       {(transaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout ? (
-                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                          Supplier
-                        </Badge>
+                        <div>
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 mb-1">
+                            Supplier
+                          </Badge>
+                          {transaction.suppliers && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              <div className="font-medium">{transaction.suppliers.name}</div>
+                              {transaction.suppliers.contact_person && (
+                                <div>Contact: {transaction.suppliers.contact_person}</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ) : transaction.staff_checkout ? (
                         <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                           Staff
@@ -477,11 +490,35 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                       </Badge>
                     </div>
                     {(selectedTransaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout && (
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-600">Type:</span>
-                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                          Supplier Checkout
-                        </Badge>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="font-medium text-gray-600">Type:</span>
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            Supplier Checkout
+                          </Badge>
+                        </div>
+                        {selectedTransaction.suppliers && (
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                            <div className="space-y-1">
+                              <div className="flex justify-between">
+                                <span className="font-medium text-gray-600">Supplier:</span>
+                                <span className="font-semibold text-purple-800">{selectedTransaction.suppliers.name}</span>
+                              </div>
+                              {selectedTransaction.suppliers.contact_person && (
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-gray-600">Contact:</span>
+                                  <span className="text-sm text-gray-800">{selectedTransaction.suppliers.contact_person}</span>
+                                </div>
+                              )}
+                              {selectedTransaction.suppliers.phone && (
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-gray-600">Phone:</span>
+                                  <span className="text-sm text-gray-800">{selectedTransaction.suppliers.phone}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     {selectedTransaction.staff_checkout && !(selectedTransaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout && (

@@ -81,6 +81,7 @@ export interface Transaction {
   status: TransactionStatus
   staff_checkout: boolean
   supplier_checkout: boolean
+  supplier_id?: string
   created_at: string
 }
 
@@ -123,6 +124,19 @@ export interface StaffItem {
   month: number
   year: number
   notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Supplier {
+  id: string
+  name: string
+  phone?: string
+  email?: string
+  address?: string
+  contact_person?: string
+  notes?: string
+  is_active: boolean
   created_at: string
   updated_at: string
 }

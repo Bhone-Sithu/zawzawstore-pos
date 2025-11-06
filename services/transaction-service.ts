@@ -13,6 +13,7 @@ export interface CreateTransactionData {
   payment_method: string
   staff_checkout?: boolean
   supplier_checkout?: boolean
+  supplier_id?: string
   items: Array<{
     product_id: string
     quantity: number
@@ -23,6 +24,12 @@ export interface CreateTransactionData {
 
 export interface TransactionWithItems extends Transaction {
   transaction_items: TransactionItem[]
+  supplier?: {
+    id: string
+    name: string
+    contact_person?: string
+    phone?: string
+  }
 }
 
 // Generate transaction number in format: TX-YYYYMMDD-XXXX
@@ -54,6 +61,7 @@ export async function createTransaction(data: CreateTransactionData): Promise<Tr
         payment_method: data.payment_method,
         staff_checkout: data.staff_checkout || false,
         supplier_checkout: data.supplier_checkout || false,
+        supplier_id: data.supplier_id || null,
         status: 'completed'
       }])
       .select()
@@ -194,6 +202,12 @@ export async function getTransactionsByBranch(
       ),
       users!cashier_id (
         name
+      ),
+      suppliers (
+        id,
+        name,
+        contact_person,
+        phone
       )
     `)
     .eq('branch_id', branchId)
@@ -273,6 +287,7 @@ export async function getAllTransactions(
   transactions: (TransactionWithItems & { 
     users?: { name: string } 
     branches?: { name: string; location: string }
+    suppliers?: { id: string; name: string; contact_person?: string; phone?: string }
   })[]
   totalCount: number
   totalPages: number
@@ -302,6 +317,12 @@ export async function getAllTransactions(
       branches (
         name,
         location
+      ),
+      suppliers (
+        id,
+        name,
+        contact_person,
+        phone
       )
     `)
 

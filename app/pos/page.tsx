@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { ReceiptPrinterProvider, useReceiptPrinter } from '@/contexts/ReceiptPrinterContext'
 import { Button } from '@/components/ui/button'
@@ -9,10 +9,13 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import POSProductSearch from '@/components/pos/POSProductSearch'
 import POSCart from '@/components/pos/POSCart'
 import POSHeader from '@/components/pos/POSHeader'
+import { SupplierService } from '@/services/supplier-service'
+import type { Supplier } from '@/types/database.types'
 import POSStats from '@/components/pos/POSStats'
 import { createTransaction } from '@/services/transaction-service'
 import { supabase } from '@/lib/supabase'
@@ -39,11 +42,31 @@ function POSPageContent() {
   const [checkoutMode, setCheckoutMode] = useState<'customer' | 'staff' | 'supplier'>('customer')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [amountPaid, setAmountPaid] = useState<string>('')
+  const [suppliers, setSuppliers] = useState<Pick<Supplier, 'id' | 'name' | 'phone' | 'contact_person'>[]>([])
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>('')
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false)
 
   // Set QZ Tray method for cashier devices (thermal printers)
   React.useEffect(() => {
     setMethod('qz-tray')
   }, [setMethod])
+
+  // Fetch suppliers when component mounts
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      setIsLoadingSuppliers(true)
+      try {
+        const suppliersData = await SupplierService.getActiveSuppliers()
+        setSuppliers(suppliersData)
+      } catch (error) {
+        console.error('Failed to fetch suppliers:', error)
+      } finally {
+        setIsLoadingSuppliers(false)
+      }
+    }
+
+    fetchSuppliers()
+  }, [])
 
   // Cart management functions
   const addToCart = (product: {
@@ -136,6 +159,15 @@ function POSPageContent() {
     setCartItems([])
   }
 
+  // Handle checkout mode change
+  const handleCheckoutModeChange = (newMode: 'customer' | 'staff' | 'supplier') => {
+    setCheckoutMode(newMode)
+    // Reset supplier selection when not in supplier mode
+    if (newMode !== 'supplier') {
+      setSelectedSupplierId('')
+    }
+  }
+
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const total = subtotal
@@ -143,7 +175,7 @@ function POSPageContent() {
   // Calculate change
   const paidAmount = Number.parseFloat(amountPaid) || 0
   const change = paidAmount - total
-  const isPaymentValid = paidAmount >= total && total > 0
+  const isPaymentValid = paidAmount >= total && total > 0 && (checkoutMode !== 'supplier' || selectedSupplierId)
 
 
   // Get branch name helper
@@ -180,6 +212,12 @@ function POSPageContent() {
         throw new Error('Unable to find cashier information')
       }
 
+      // Validate supplier selection for supplier checkout
+      if (checkoutMode === 'supplier' && !selectedSupplierId) {
+        alert('Please select a supplier for supplier checkout.')
+        return
+      }
+
       // Prepare transaction data
       const transactionData = {
         branch_id: branchId,
@@ -191,6 +229,7 @@ function POSPageContent() {
         payment_method: 'cash', // Default to cash for now
         staff_checkout: checkoutMode === 'staff',
         supplier_checkout: checkoutMode === 'supplier',
+        supplier_id: checkoutMode === 'supplier' ? selectedSupplierId : undefined,
         items: cartItems.map(item => ({
           product_id: item.id,
           quantity: item.quantity,
@@ -230,6 +269,7 @@ function POSPageContent() {
       clearCart()
       setCheckoutMode('customer')
       setAmountPaid('')
+      setSelectedSupplierId('')
       // Refresh product list to update stock quantities
       setRefreshTrigger(prev => prev + 1)
       const checkoutType = checkoutMode === 'staff' ? 'Staff' : checkoutMode === 'supplier' ? 'Supplier' : 'Customer'
@@ -419,7 +459,7 @@ function POSPageContent() {
                       </Label>
                       <RadioGroup 
                         value={checkoutMode} 
-                        onValueChange={(value: 'customer' | 'staff' | 'supplier') => setCheckoutMode(value)}
+                        onValueChange={handleCheckoutModeChange}
                         className="space-y-2"
                       >
                         <div className="flex items-center space-x-2">
@@ -456,10 +496,61 @@ function POSPageContent() {
                           )}
                         </div>
                       </RadioGroup>
+
+                      {/* Supplier Selection - Only show when supplier checkout is selected */}
+                      {checkoutMode === 'supplier' && (
+                        <div className="mt-4 pt-3 border-t border-gray-200">
+                          <Label className="text-sm font-semibold text-gray-800 mb-2 block">
+                            Select Supplier *
+                          </Label>
+                          {isLoadingSuppliers ? (
+                            <div className="flex items-center justify-center py-2">
+                              <LoadingSpinner size="sm" />
+                              <span className="ml-2 text-sm text-gray-500">Loading suppliers...</span>
+                            </div>
+                          ) : (
+                            <Select 
+                              value={selectedSupplierId} 
+                              onValueChange={setSelectedSupplierId}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Choose a supplier" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {suppliers.length === 0 ? (
+                                  <SelectItem value="" disabled>
+                                    No suppliers available
+                                  </SelectItem>
+                                ) : (
+                                  suppliers.map((supplier) => (
+                                    <SelectItem key={supplier.id} value={supplier.id}>
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{supplier.name}</span>
+                                        {supplier.contact_person && (
+                                          <span className="text-xs text-gray-500">
+                                            Contact: {supplier.contact_person}
+                                            {supplier.phone && ` • ${supplier.phone}`}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                          )}
+                          {checkoutMode === 'supplier' && !selectedSupplierId && (
+                            <p className="text-xs text-red-600 mt-1">
+                              Please select a supplier to continue
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       <p className="text-xs text-gray-600 mt-2">
                         {checkoutMode === 'customer' && 'Standard customer purchase'}
                         {checkoutMode === 'staff' && 'Staff member purchasing items'}
-                        {checkoutMode === 'supplier' && 'Store purchasing from supplier'}
+                        {checkoutMode === 'supplier' && 'Store purchasing from supplier - increases inventory'}
                       </p>
                     </div>
                   </div>

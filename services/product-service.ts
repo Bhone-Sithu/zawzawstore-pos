@@ -76,6 +76,7 @@ export interface ProductWithCategory extends Product {
 export interface ProductWithInventory extends ProductWithCategory {
   stock?: number
   branch_id?: string
+  price?: number // Inventory-specific price (overrides base_price if set)
 }
 
 export interface ProductFilters {
@@ -164,6 +165,7 @@ export async function fetchPOSProductsPaginated(
         .from('inventory')
         .select(`
           quantity,
+          price,
           products!inner(
             id,
             barcode,
@@ -214,6 +216,7 @@ export async function fetchPOSProductsPaginated(
         .from('inventory')
         .select(`
           quantity,
+          price,
           products!inner(
             id,
             barcode,
@@ -247,6 +250,7 @@ export async function fetchPOSProductsPaginated(
       .from('inventory')
       .select(`
         quantity,
+        price,
         products!inner(
           id,
           barcode,
@@ -279,6 +283,7 @@ export async function fetchPOSProductsPaginated(
       .from('inventory')
       .select(`
         quantity,
+        price,
         products!inner(
           id,
           barcode,
@@ -353,7 +358,8 @@ async function transformProductData(data: any[], totalCount: number, itemsPerPag
       updated_at: product.updated_at,
       category: categoriesMap.get(product.category_id),
       stock: item.quantity,
-      branch_id: branchId
+      branch_id: branchId,
+      price: item.price || product.base_price // Use inventory price if available, otherwise use base price
     }
   })
 
@@ -373,6 +379,7 @@ export async function getPOSProductByBarcode(barcode: string, branchId: string):
       .from('inventory')
       .select(`
         quantity,
+        price,
         products!inner(
           id,
           barcode,

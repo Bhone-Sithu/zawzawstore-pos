@@ -57,6 +57,7 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
     base_price: number
     image?: string
     stock?: number
+    price?: number
     category?: { name_en: string; custom_price: boolean }
   }) => {
     // Don't add if no stock available
@@ -67,7 +68,7 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
     onAddToCart({
       ...product,
       stock: product.stock,
-      price: product.base_price,
+      price: product.price || product.base_price,
       category: product.category ? { custom_price: product.category.custom_price } : undefined
     })
   }
@@ -283,7 +284,7 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
                         </Badge>
                         <div className="text-left">
                           <p className="text-lg font-bold text-orange-600">
-                            RM {product.base_price.toFixed(2)}
+                            RM {(product.price || product.base_price).toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500 break-all mb-1">
                             ID: {product.barcode}

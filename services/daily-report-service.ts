@@ -51,6 +51,12 @@ export class DailyReportService {
         *,
         branches(name),
         users(name),
+        suppliers(
+          id,
+          name,
+          contact_person,
+          phone
+        ),
         transaction_items(
           *,
           products(
