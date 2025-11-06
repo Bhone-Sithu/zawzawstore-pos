@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import POSProductSearch from '@/components/pos/POSProductSearch'
 import POSCart from '@/components/pos/POSCart'
@@ -36,6 +37,7 @@ function POSPageContent() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [isStaffCheckout, setIsStaffCheckout] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [amountPaid, setAmountPaid] = useState<string>('')
 
   // Set QZ Tray method for cashier devices (thermal printers)
   React.useEffect(() => {
@@ -136,6 +138,11 @@ function POSPageContent() {
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const total = subtotal
+  
+  // Calculate change
+  const paidAmount = parseFloat(amountPaid) || 0
+  const change = paidAmount - total
+  const isPaymentValid = paidAmount >= total && total > 0
 
 
   // Get branch name helper
@@ -151,6 +158,11 @@ function POSPageContent() {
   const processPayment = async () => {
     if (!branchId || !user || cartItems.length === 0) {
       alert('Unable to process payment. Please try again.')
+      return
+    }
+
+    if (!isPaymentValid) {
+      alert('Please enter a valid payment amount that covers the total.')
       return
     }
 
@@ -208,6 +220,8 @@ function POSPageContent() {
         subtotal,
         tax: 0,
         total,
+        amountPaid: paidAmount,
+        change,
         paymentMethod: 'cash',
         isStaffCheckout
       }
@@ -215,6 +229,7 @@ function POSPageContent() {
       // Success! Clear cart and show success message
       clearCart()
       setIsStaffCheckout(false)
+      setAmountPaid('')
       // Refresh product list to update stock quantities
       setRefreshTrigger(prev => prev + 1)
       const checkoutType = isStaffCheckout ? 'Staff' : 'Customer'
@@ -294,6 +309,59 @@ function POSPageContent() {
                     </div>
                   </div>
 
+                  {/* Payment Section */}
+                  <div className="space-y-3 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <label htmlFor="amount-paid" className="block text-sm font-medium text-gray-700 mb-1">
+                        Amount Paid
+                      </label>
+                      <div className="space-y-2">
+                        <Input
+                          id="amount-paid"
+                          type="number"
+                          value={amountPaid}
+                          onChange={(e) => setAmountPaid(e.target.value)}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          className="text-lg font-bold text-center"
+                          disabled={cartItems.length === 0}
+                        />
+                        {total > 0 && (
+                          <Button
+                            onClick={() => setAmountPaid(total.toFixed(2))}
+                            variant="outline"
+                            size="sm"
+                            className="w-full cursor-pointer"
+                            disabled={cartItems.length === 0}
+                          >
+                            Exact Amount (RM {total.toFixed(2)})
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {amountPaid && paidAmount > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-lg">
+                          <span>Amount Paid:</span>
+                          <span className="font-bold">RM {paidAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-lg">
+                          <span>Change:</span>
+                          <span className={`font-bold ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            RM {change.toFixed(2)}
+                          </span>
+                        </div>
+                        {change < 0 && (
+                          <div className="text-sm text-red-600 text-center">
+                            Insufficient payment amount
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Printer Status */}
                   <React.Fragment>
                     <div className="mb-3 p-2 bg-gray-50 rounded-lg flex items-center justify-between">
@@ -323,8 +391,8 @@ function POSPageContent() {
                   {/* Payment Button */}
                   <Button
                     onClick={processPayment}
-                    disabled={cartItems.length === 0 || isProcessingPayment}
-                    className="w-full h-14 text-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer mb-4"
+                    disabled={cartItems.length === 0 || isProcessingPayment || !isPaymentValid}
+                    className="w-full h-14 text-lg bg-orange-500 hover:bg-orange-600 text-white cursor-pointer mb-4 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     size="lg"
                   >
                     {isProcessingPayment ? (

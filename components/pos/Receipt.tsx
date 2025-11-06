@@ -20,6 +20,8 @@ interface ReceiptData {
   subtotal: number
   tax: number
   total: number
+  amountPaid: number
+  change: number
   paymentMethod: string
   isStaffCheckout: boolean
 }
@@ -155,9 +157,17 @@ const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ data }, ref) => {
 
         {/* Payment Info */}
         <div style={{ marginBottom: '15px', borderBottom: '1px dashed #000', paddingBottom: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
             <span>Payment Method:</span>
             <span style={{ textTransform: 'uppercase', fontWeight: 'bold' }}>{data.paymentMethod}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+            <span>Amount Paid:</span>
+            <span style={{ fontWeight: 'bold' }}>RM {data.amountPaid.toFixed(2)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Change:</span>
+            <span style={{ fontWeight: 'bold' }}>RM {data.change.toFixed(2)}</span>
           </div>
         </div>
 
