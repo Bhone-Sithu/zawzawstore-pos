@@ -38,10 +38,22 @@ export function useBarcodeScanner({
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true'
       const isBarcodeInput = target.dataset.barcodeInput === 'true'
       
-      // If global mode is enabled, allow scanning everywhere
-      // If not global, only allow in barcode inputs or when no input is focused
-      if (!global && isInputField && !isBarcodeInput) {
+      // If global mode is enabled, still respect barcode input focus
+      // Allow scanning when: 1) no input focused, 2) barcode input focused, or 3) very fast input (scanner)
+      if (isInputField && !isBarcodeInput && !global) {
         return
+      }
+      
+      // For global mode, detect if user is actively typing in a regular input
+      if (global && isInputField && !isBarcodeInput) {
+        // Check if this might be manual typing (slower) vs scanner (very fast)
+        const currentTime = Date.now()
+        const timeSinceLastKey = currentTime - lastKeyTime.current
+        
+        // If user is actively typing (reasonable pace), don't interfere
+        if (timeSinceLastKey > 100 && timeSinceLastKey < 2000) {
+          return
+        }
       }
 
       // Clear previous timeout

@@ -157,133 +157,275 @@ export async function fetchPOSProductsPaginated(
   itemsPerPage: number = 10,
   filters: ProductFilters = {}
 ): Promise<PaginatedPOSProductsResult> {
-  let query = supabase
-    .from('inventory')
-    .select(`
-      quantity,
-      products!inner(
-        id,
-        barcode,
-        name_en,
-        name_mm,
-        image,
-        base_price,
-        supplier_price,
-        is_active,
-        category_id,
-        created_at,
-        updated_at,
-        categories(
+  try {
+    // If no search term, get all products
+    if (!filters.searchTerm || !filters.searchTerm.trim()) {
+      let query = supabase
+        .from('inventory')
+        .select(`
+          quantity,
+          products!inner(
+            id,
+            barcode,
+            name_en,
+            name_mm,
+            image,
+            base_price,
+            supplier_price,
+            is_active,
+            category_id,
+            created_at,
+            updated_at
+          )
+        `, { count: 'exact' })
+        .eq('branch_id', branchId)
+        .eq('products.is_active', true)
+
+      // Apply category filter
+      if (filters.categoryId && filters.categoryId !== 'all') {
+        query = query.eq('products.category_id', filters.categoryId)
+      }
+
+      // Add pagination
+      const offset = (page - 1) * itemsPerPage
+      query = query.range(offset, offset + itemsPerPage - 1)
+      query = query.order('name_en', { foreignTable: 'products' })
+
+      const { data, error, count } = await query
+
+      if (error) {
+        console.error('Database error in fetchPOSProductsPaginated (no search):', error)
+        throw new Error(`Failed to fetch POS products: ${error.message}`)
+      }
+
+      return await transformProductData(data, count, itemsPerPage, branchId)
+    }
+
+    // With search term - try multiple queries and combine results
+    const searchTerm = filters.searchTerm.trim()
+    const isNumeric = /^\d+$/.test(searchTerm)
+    
+    let allResults: any[] = []
+    let totalCount = 0
+
+    // Search by barcode (exact match)
+    if (isNumeric) {
+      const barcodeQuery = supabase
+        .from('inventory')
+        .select(`
+          quantity,
+          products!inner(
+            id,
+            barcode,
+            name_en,
+            name_mm,
+            image,
+            base_price,
+            supplier_price,
+            is_active,
+            category_id,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('branch_id', branchId)
+        .eq('products.is_active', true)
+        .eq('products.barcode', searchTerm)
+
+      if (filters.categoryId && filters.categoryId !== 'all') {
+        barcodeQuery.eq('products.category_id', filters.categoryId)
+      }
+
+      const { data: barcodeData, error: barcodeError } = await barcodeQuery
+      if (!barcodeError && barcodeData) {
+        allResults.push(...barcodeData)
+      }
+    }
+
+    // Search by English name
+    const enQuery = supabase
+      .from('inventory')
+      .select(`
+        quantity,
+        products!inner(
           id,
+          barcode,
           name_en,
           name_mm,
-          custom_price
+          image,
+          base_price,
+          supplier_price,
+          is_active,
+          category_id,
+          created_at,
+          updated_at
         )
-      )
-    `, { count: 'exact' })
-    .eq('branch_id', branchId)
-    .eq('products.is_active', true)
+      `)
+      .eq('branch_id', branchId)
+      .eq('products.is_active', true)
+      .ilike('products.name_en', `%${searchTerm}%`)
 
-  // Apply category filter
-  if (filters.categoryId && filters.categoryId !== 'all') {
-    query = query.eq('products.category_id', filters.categoryId)
+    if (filters.categoryId && filters.categoryId !== 'all') {
+      enQuery.eq('products.category_id', filters.categoryId)
+    }
+
+    const { data: enData, error: enError } = await enQuery
+    if (!enError && enData) {
+      allResults.push(...enData)
+    }
+
+    // Search by Myanmar name
+    const mmQuery = supabase
+      .from('inventory')
+      .select(`
+        quantity,
+        products!inner(
+          id,
+          barcode,
+          name_en,
+          name_mm,
+          image,
+          base_price,
+          supplier_price,
+          is_active,
+          category_id,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('branch_id', branchId)
+      .eq('products.is_active', true)
+      .ilike('products.name_mm', `%${searchTerm}%`)
+
+    if (filters.categoryId && filters.categoryId !== 'all') {
+      mmQuery.eq('products.category_id', filters.categoryId)
+    }
+
+    const { data: mmData, error: mmError } = await mmQuery
+    if (!mmError && mmData) {
+      allResults.push(...mmData)
+    }
+
+    // Remove duplicates based on product ID
+    const uniqueResults = allResults.filter((item, index, self) => 
+      index === self.findIndex(t => t.products.id === item.products.id)
+    )
+
+    // Apply pagination to combined results
+    totalCount = uniqueResults.length
+    const offset = (page - 1) * itemsPerPage
+    const paginatedResults = uniqueResults.slice(offset, offset + itemsPerPage)
+
+    return await transformProductData(paginatedResults, totalCount, itemsPerPage, branchId)
+
+  } catch (error) {
+    console.error('Error in fetchPOSProductsPaginated:', error)
+    throw error
   }
+}
 
-  // Apply search filter
-  if (filters.searchTerm && filters.searchTerm.trim()) {
-    const searchTerm = filters.searchTerm.trim()
-    query = query.or(`products.name_en.ilike.%${searchTerm}%,products.name_mm.ilike.%${searchTerm}%,products.barcode.ilike.%${searchTerm}%`)
-  }
+// Helper function to transform product data
+async function transformProductData(data: any[], totalCount: number, itemsPerPage: number, branchId: string) {
+  // Get categories separately
+  const { data: categoriesData } = await supabase
+    .from('categories')
+    .select('*')
 
-  // Add pagination
-  const offset = (page - 1) * itemsPerPage
-  query = query.range(offset, offset + itemsPerPage - 1)
-
-  // Order by product name
-  query = query.order('name_en', { foreignTable: 'products' })
-
-  const { data, error, count } = await query
-
-  if (error) {
-    throw new Error('Failed to fetch POS products')
+  const categoriesMap = new Map()
+  if (categoriesData) {
+    categoriesData.forEach(cat => categoriesMap.set(cat.id, cat))
   }
 
   // Transform data to match ProductWithInventory interface
-  const productsWithInventory: ProductWithInventory[] = (data || []).map((item: any) => ({
-    id: item.products.id,
-    barcode: item.products.barcode,
-    name_en: item.products.name_en,
-    name_mm: item.products.name_mm,
-    image: item.products.image,
-    category_id: item.products.category_id,
-    supplier_price: item.products.supplier_price,
-    base_price: item.products.base_price,
-    is_active: item.products.is_active,
-    created_at: item.products.created_at,
-    updated_at: item.products.updated_at,
-    category: item.products.categories,
-    stock: item.quantity,
-    branch_id: branchId
-  }))
+  const productsWithInventory: ProductWithInventory[] = (data || []).map((item: any) => {
+    const product = item.products
+    return {
+      id: product.id,
+      barcode: product.barcode,
+      name_en: product.name_en,
+      name_mm: product.name_mm,
+      image: product.image,
+      category_id: product.category_id,
+      supplier_price: product.supplier_price,
+      base_price: product.base_price,
+      is_active: product.is_active,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      category: categoriesMap.get(product.category_id),
+      stock: item.quantity,
+      branch_id: branchId
+    }
+  })
 
-  const totalPages = Math.ceil((count || 0) / itemsPerPage)
+  const totalPages = Math.ceil(totalCount / itemsPerPage)
 
   return {
     products: productsWithInventory,
-    totalCount: count || 0,
+    totalCount: totalCount,
     totalPages
   }
 }
 
 // Get product with current stock for POS
 export async function getPOSProductByBarcode(barcode: string, branchId: string): Promise<ProductWithInventory | null> {
-  const { data, error } = await supabase
-    .from('inventory')
-    .select(`
-      quantity,
-      products!inner(
-        id,
-        barcode,
-        name_en,
-        name_mm,
-        image,
-        base_price,
-        supplier_price,
-        is_active,
-        category_id,
-        created_at,
-        updated_at,
-        categories(
+  try {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select(`
+        quantity,
+        products!inner(
           id,
+          barcode,
           name_en,
           name_mm,
-          custom_price
+          image,
+          base_price,
+          supplier_price,
+          is_active,
+          category_id,
+          created_at,
+          updated_at
         )
-      )
-    `)
-    .eq('branch_id', branchId)
-    .eq('products.barcode', barcode)
-    .eq('products.is_active', true)
-    .single()
+      `)
+      .eq('branch_id', branchId)
+      .eq('products.barcode', barcode)
+      .eq('products.is_active', true)
+      .single()
 
-  if (error || !data) {
+    if (error || !data) {
+      console.log('Product not found by barcode:', barcode)
+      return null
+    }
+
+    // Get category separately
+    let category = null
+    const product = (data as any).products
+    if (product.category_id) {
+      const { data: categoryData } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('id', product.category_id)
+        .single()
+      category = categoryData
+    }
+    return {
+      id: product.id,
+      barcode: product.barcode,
+      name_en: product.name_en,
+      name_mm: product.name_mm,
+      image: product.image,
+      category_id: product.category_id,
+      supplier_price: product.supplier_price,
+      base_price: product.base_price,
+      is_active: product.is_active,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      category: category,
+      stock: (data as any).quantity,
+      branch_id: branchId
+    }
+  } catch (error) {
+    console.error('Error in getPOSProductByBarcode:', error)
     return null
-  }
-
-  return {
-    id: (data as any).products.id,
-    barcode: (data as any).products.barcode,
-    name_en: (data as any).products.name_en,
-    name_mm: (data as any).products.name_mm,
-    image: (data as any).products.image,
-    category_id: (data as any).products.category_id,
-    supplier_price: (data as any).products.supplier_price,
-    base_price: (data as any).products.base_price,
-    is_active: (data as any).products.is_active,
-    created_at: (data as any).products.created_at,
-    updated_at: (data as any).products.updated_at,
-    category: (data as any).products.categories,
-    stock: (data as any).quantity,
-    branch_id: branchId
   }
 }

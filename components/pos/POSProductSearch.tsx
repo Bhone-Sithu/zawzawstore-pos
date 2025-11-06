@@ -82,9 +82,14 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
         handleProductAdd(product)
         // Clear the search after successful scan
         clearSearch()
+      } else {
+        // If exact barcode not found, trigger general search
+        handleSearch(barcode)
       }
     } catch (error) {
       console.error('Error searching product by barcode:', error)
+      // On error, still try general search
+      handleSearch(barcode)
     }
   }
 
@@ -140,7 +145,7 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
   // Global barcode scanner for automatic detection (keyboard only)
   const { isScanning } = useBarcodeScanner({
     onScan: handleAutomaticBarcodeSearch,
-    enabled: !showBarcodeScanner, // Disable when modal is open
+    enabled: !showBarcodeScanner, // Enable when modal is closed
     preventDefault: true,
     global: true, // Enable global scanning
     minLength: 6, // Most barcodes are at least 6 characters
@@ -151,21 +156,6 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
 
   return (
     <div className="flex flex-col h-full">
-      {/* Barcode Scanning Indicator */}
-      {isScanning && (
-        <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-3 animate-pulse">
-          <div className="flex items-center gap-2">
-            <Scan className="h-5 w-5 text-orange-600" />
-            <span className="text-orange-800 font-medium">Barcode Scanner Active - Processing...</span>
-          </div>
-          <div className="flex-1" />
-          <div className="flex gap-1">
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div>
-        </div>
-      )}
 
       {/* Search Controls */}
       <div className="mb-6">

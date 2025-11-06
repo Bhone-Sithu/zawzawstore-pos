@@ -34,8 +34,8 @@ export function BarcodeInput({
 
   const { isScanning } = useBarcodeScanner({
     onScan: handleScan,
-    enabled: isFocused,
-    preventDefault: true,
+    enabled: isFocused, // Enable when input is focused
+    preventDefault: false,
     minLength: 1,
     maxLength: 50,
     timeout: 150
@@ -54,6 +54,11 @@ export function BarcodeInput({
     // Allow normal typing when focused
     if (e.key === 'Escape') {
       inputRef.current?.blur()
+    }
+    // Trigger search on Enter key
+    if (e.key === 'Enter' && onScan && value.trim()) {
+      e.preventDefault()
+      onScan(value.trim())
     }
   }
 
