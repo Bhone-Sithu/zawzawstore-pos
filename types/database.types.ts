@@ -80,6 +80,7 @@ export interface Transaction {
   payment_method: string
   status: TransactionStatus
   staff_checkout: boolean
+  supplier_checkout: boolean
   created_at: string
 }
 

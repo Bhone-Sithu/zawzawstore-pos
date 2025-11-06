@@ -23,7 +23,7 @@ interface ReceiptData {
   amountPaid: number
   change: number
   paymentMethod: string
-  isStaffCheckout: boolean
+  checkoutMode: 'customer' | 'staff' | 'supplier'
 }
 
 interface ReceiptProps {
@@ -79,17 +79,17 @@ const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ data }, ref) => {
             <span>Cashier:</span>
             <span>{data.cashierName}</span>
           </div>
-          {data.isStaffCheckout && (
+          {data.checkoutMode !== 'customer' && (
             <div style={{ 
               textAlign: 'center', 
               marginTop: '5px',
               padding: '3px',
-              backgroundColor: '#f0f0f0',
-              border: '1px solid #ccc',
+              backgroundColor: data.checkoutMode === 'staff' ? '#f0f0f0' : '#f5f0ff',
+              border: `1px solid ${data.checkoutMode === 'staff' ? '#ccc' : '#c084fc'}`,
               fontSize: '10px',
               fontWeight: 'bold'
             }}>
-              STAFF PURCHASE
+              {data.checkoutMode === 'staff' ? 'STAFF PURCHASE' : 'SUPPLIER CHECKOUT'}
             </div>
           )}
         </div>

@@ -12,6 +12,7 @@ export interface CreateTransactionData {
   total_amount: number
   payment_method: string
   staff_checkout?: boolean
+  supplier_checkout?: boolean
   items: Array<{
     product_id: string
     quantity: number
@@ -52,6 +53,7 @@ export async function createTransaction(data: CreateTransactionData): Promise<Tr
         total_amount: data.total_amount,
         payment_method: data.payment_method,
         staff_checkout: data.staff_checkout || false,
+        supplier_checkout: data.supplier_checkout || false,
         status: 'completed'
       }])
       .select()
@@ -99,7 +101,12 @@ export async function createTransaction(data: CreateTransactionData): Promise<Tr
         continue
       }
 
-      const newQuantity = Math.max(0, (currentInventory?.quantity || 0) - item.quantity)
+      // For supplier checkout: ADD to inventory (receiving stock)
+      // For customer/staff checkout: SUBTRACT from inventory (selling/using stock)
+      const currentQty = currentInventory?.quantity || 0
+      const newQuantity = data.supplier_checkout 
+        ? currentQty + item.quantity  // ADD for supplier purchases
+        : Math.max(0, currentQty - item.quantity)  // SUBTRACT for sales/usage
       
       const { error: updateError } = await supabase
         .from('inventory')
@@ -260,6 +267,7 @@ export async function getAllTransactions(
     startDate?: string
     endDate?: string
     staffCheckout?: boolean
+    supplierCheckout?: boolean
   }
 ): Promise<{
   transactions: (TransactionWithItems & { 
@@ -319,6 +327,9 @@ export async function getAllTransactions(
   if (filters?.staffCheckout !== undefined) {
     query = query.eq('staff_checkout', filters.staffCheckout)
   }
+  if (filters?.supplierCheckout !== undefined) {
+    query = query.eq('supplier_checkout', filters.supplierCheckout)
+  }
 
   const { data: transactions, error } = await query
     .order('created_at', { ascending: false })
@@ -354,6 +365,9 @@ export async function getAllTransactions(
   }
   if (filters?.staffCheckout !== undefined) {
     countQuery = countQuery.eq('staff_checkout', filters.staffCheckout)
+  }
+  if (filters?.supplierCheckout !== undefined) {
+    countQuery = countQuery.eq('supplier_checkout', filters.supplierCheckout)
   }
 
   const { count, error: countError } = await countQuery

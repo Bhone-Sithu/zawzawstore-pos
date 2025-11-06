@@ -6,8 +6,9 @@ import { ReceiptPrinterProvider, useReceiptPrinter } from '@/contexts/ReceiptPri
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import POSProductSearch from '@/components/pos/POSProductSearch'
 import POSCart from '@/components/pos/POSCart'
@@ -35,7 +36,7 @@ function POSPageContent() {
   const { printReceipt, isConnected, connectPrinter, setMethod } = useReceiptPrinter()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [isStaffCheckout, setIsStaffCheckout] = useState(false)
+  const [checkoutMode, setCheckoutMode] = useState<'customer' | 'staff' | 'supplier'>('customer')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [amountPaid, setAmountPaid] = useState<string>('')
 
@@ -140,7 +141,7 @@ function POSPageContent() {
   const total = subtotal
   
   // Calculate change
-  const paidAmount = parseFloat(amountPaid) || 0
+  const paidAmount = Number.parseFloat(amountPaid) || 0
   const change = paidAmount - total
   const isPaymentValid = paidAmount >= total && total > 0
 
@@ -188,7 +189,8 @@ function POSPageContent() {
         discount_amount: 0,
         total_amount: total,
         payment_method: 'cash', // Default to cash for now
-        staff_checkout: isStaffCheckout,
+        staff_checkout: checkoutMode === 'staff',
+        supplier_checkout: checkoutMode === 'supplier',
         items: cartItems.map(item => ({
           product_id: item.id,
           quantity: item.quantity,
@@ -223,22 +225,24 @@ function POSPageContent() {
         amountPaid: paidAmount,
         change,
         paymentMethod: 'cash',
-        isStaffCheckout
+        checkoutMode
       }
       
       // Success! Clear cart and show success message
       clearCart()
-      setIsStaffCheckout(false)
+      setCheckoutMode('customer')
       setAmountPaid('')
       // Refresh product list to update stock quantities
       setRefreshTrigger(prev => prev + 1)
-      const checkoutType = isStaffCheckout ? 'Staff' : 'Customer'
+      const checkoutType = checkoutMode === 'staff' ? 'Staff' : checkoutMode === 'supplier' ? 'Supplier' : 'Customer'
       
       // Show success message
       alert(`${checkoutType} payment successful! Transaction #${transaction.transaction_number}`)
       
-      // Automatically print receipt with current transaction data
-      await printReceipt(receiptData)
+      // Only print receipt for customer transactions
+      if (checkoutMode === 'customer') {
+        await printReceipt(receiptData)
+      }
       
     } catch (error) {
       console.error('Payment processing error:', error)
@@ -409,50 +413,56 @@ function POSPageContent() {
                   </Button>
 
 
-                  {/* Staff Checkout Toggle - Below main button */}
+                  {/* Checkout Mode Selection - Below main button */}
                   <div className="border-t pt-4">
-                    <div 
-                      className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer" 
-                      onClick={() => setIsStaffCheckout(!isStaffCheckout)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          setIsStaffCheckout(!isStaffCheckout)
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Toggle staff checkout mode"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="staff-checkout"
-                          checked={isStaffCheckout}
-                          onCheckedChange={(checked: boolean) => setIsStaffCheckout(checked)}
-                          className="h-5 w-5 cursor-pointer border-2 border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-                        />
-                        <div>
-                          <label 
-                            htmlFor="staff-checkout" 
-                            className="text-sm font-semibold text-blue-800 cursor-pointer"
-                          >
-                            Staff Checkout Mode
-                          </label>
-                          <p className="text-xs text-blue-600">
-                            {isStaffCheckout ? 'Processing as staff purchase' : 'Click to enable staff checkout'}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge 
-                        variant={isStaffCheckout ? "default" : "outline"} 
-                        className={`text-sm px-3 py-1 font-medium ${
-                          isStaffCheckout 
-                            ? 'bg-blue-600 text-white border-blue-600' 
-                            : 'bg-white text-blue-600 border-blue-300'
-                        }`}
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <Label className="text-sm font-semibold text-gray-800 mb-3 block">
+                        Checkout Mode
+                      </Label>
+                      <RadioGroup 
+                        value={checkoutMode} 
+                        onValueChange={(value: 'customer' | 'staff' | 'supplier') => setCheckoutMode(value)}
+                        className="space-y-2"
                       >
-                        {isStaffCheckout ? 'STAFF' : 'CUSTOMER'}
-                      </Badge>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="customer" id="customer" />
+                          <Label htmlFor="customer" className="text-sm cursor-pointer">
+                            Customer Purchase
+                          </Label>
+                          {checkoutMode === 'customer' && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                              CUSTOMER
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="staff" id="staff" />
+                          <Label htmlFor="staff" className="text-sm cursor-pointer">
+                            Staff Purchase
+                          </Label>
+                          {checkoutMode === 'staff' && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                              STAFF
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="supplier" id="supplier" />
+                          <Label htmlFor="supplier" className="text-sm cursor-pointer">
+                            Supplier Checkout
+                          </Label>
+                          {checkoutMode === 'supplier' && (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                              SUPPLIER
+                            </Badge>
+                          )}
+                        </div>
+                      </RadioGroup>
+                      <p className="text-xs text-gray-600 mt-2">
+                        {checkoutMode === 'customer' && 'Standard customer purchase'}
+                        {checkoutMode === 'staff' && 'Staff member purchasing items'}
+                        {checkoutMode === 'supplier' && 'Store purchasing from supplier'}
+                      </p>
                     </div>
                   </div>
                 </div>

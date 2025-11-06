@@ -328,14 +328,32 @@ export default function DashboardPage() {
                             }).format(staff.totalSales)}
                           </p>
                           <p className="text-sm text-gray-600">{staff.totalTransactions} transactions</p>
-                          {staff.staffCheckouts > 0 && (
-                            <p className="text-xs text-orange-600">
-                              {new Intl.NumberFormat('en-MY', {
-                                style: 'currency',
-                                currency: 'MYR'
-                              }).format(staff.staffCheckouts)} staff items
-                            </p>
-                          )}
+                          <div className="text-xs space-y-1 mt-1">
+                            {staff.customerSales > 0 && (
+                              <p className="text-green-600">
+                                Customer: {new Intl.NumberFormat('en-MY', {
+                                  style: 'currency',
+                                  currency: 'MYR'
+                                }).format(staff.customerSales)}
+                              </p>
+                            )}
+                            {staff.staffCheckouts > 0 && (
+                              <p className="text-blue-600">
+                                Staff: {new Intl.NumberFormat('en-MY', {
+                                  style: 'currency',
+                                  currency: 'MYR'
+                                }).format(staff.staffCheckouts)}
+                              </p>
+                            )}
+                            {staff.supplierCheckouts > 0 && (
+                              <p className="text-purple-600">
+                                Supplier: {new Intl.NumberFormat('en-MY', {
+                                  style: 'currency',
+                                  currency: 'MYR'
+                                }).format(staff.supplierCheckouts)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

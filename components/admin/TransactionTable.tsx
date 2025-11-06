@@ -55,7 +55,8 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
     transactionNumber: '',
     startDate: '',
     endDate: '',
-    staffCheckout: undefined as boolean | undefined
+    staffCheckout: undefined as boolean | undefined,
+    supplierCheckout: undefined as boolean | undefined
   })
 
   const [appliedFilters, setAppliedFilters] = useState(filters)
@@ -65,7 +66,8 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
     try {
       const result = await getAllTransactions(page, 20, {
         ...appliedFilters,
-        staffCheckout: appliedFilters.staffCheckout
+        staffCheckout: appliedFilters.staffCheckout,
+        supplierCheckout: appliedFilters.supplierCheckout
       })
       setTransactions(result.transactions)
       setTotalPages(result.totalPages)
@@ -98,7 +100,8 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
       transactionNumber: '',
       startDate: '',
       endDate: '',
-      staffCheckout: undefined
+      staffCheckout: undefined,
+      supplierCheckout: undefined
     }
     setFilters(clearedFilters)
     setAppliedFilters(clearedFilters)
@@ -153,7 +156,7 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
         transaction.tax_amount.toFixed(2),
         transaction.discount_amount.toFixed(2),
         transaction.total_amount.toFixed(2),
-        transaction.staff_checkout ? 'Staff' : 'Customer',
+        (transaction as any).supplier_checkout ? 'Supplier' : transaction.staff_checkout ? 'Staff' : 'Customer',
         itemDetails
       ]
     })
@@ -297,21 +300,27 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="staff-filter">Purchase Type</Label>
+                  <Label htmlFor="purchase-type-filter">Purchase Type</Label>
                   <Select 
-                    value={filters.staffCheckout === undefined ? 'all' : filters.staffCheckout ? 'staff' : 'customer'} 
+                    value={
+                      filters.staffCheckout === undefined && filters.supplierCheckout === undefined ? 'all' :
+                      filters.staffCheckout ? 'staff' :
+                      filters.supplierCheckout ? 'supplier' : 'customer'
+                    } 
                     onValueChange={(value) => setFilters({
                       ...filters, 
-                      staffCheckout: value === 'all' ? undefined : value === 'staff'
+                      staffCheckout: value === 'staff' ? true : undefined,
+                      supplierCheckout: value === 'supplier' ? true : undefined
                     })}
                   >
-                    <SelectTrigger id="staff-filter" className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-400 focus:border-orange-400 cursor-pointer">
+                    <SelectTrigger id="purchase-type-filter" className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-400 focus:border-orange-400 cursor-pointer">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-md z-50 max-h-60 overflow-auto">
                       <SelectItem value="all" className="px-3 py-2 hover:bg-orange-50 focus:bg-orange-100 cursor-pointer">All Types</SelectItem>
                       <SelectItem value="customer" className="px-3 py-2 hover:bg-orange-50 focus:bg-orange-100 cursor-pointer">Customer</SelectItem>
                       <SelectItem value="staff" className="px-3 py-2 hover:bg-orange-50 focus:bg-orange-100 cursor-pointer">Staff Purchase</SelectItem>
+                      <SelectItem value="supplier" className="px-3 py-2 hover:bg-orange-50 focus:bg-orange-100 cursor-pointer">Supplier Checkout</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -378,7 +387,11 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                       <p className="font-semibold text-gray-900">{formatCurrency(transaction.total_amount)}</p>
                     </TableCell>
                     <TableCell className="py-4 px-4">
-                      {transaction.staff_checkout ? (
+                      {(transaction as any).supplier_checkout ? (
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          Supplier
+                        </Badge>
+                      ) : transaction.staff_checkout ? (
                         <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                           Staff
                         </Badge>
@@ -463,7 +476,15 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                         {selectedTransaction.payment_method}
                       </Badge>
                     </div>
-                    {selectedTransaction.staff_checkout && (
+                    {(selectedTransaction as any).supplier_checkout && (
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Type:</span>
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          Supplier Checkout
+                        </Badge>
+                      </div>
+                    )}
+                    {selectedTransaction.staff_checkout && !(selectedTransaction as any).supplier_checkout && (
                       <div className="flex justify-between">
                         <span className="font-medium text-gray-600">Type:</span>
                         <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">

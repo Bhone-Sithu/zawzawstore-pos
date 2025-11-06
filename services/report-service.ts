@@ -7,6 +7,9 @@ export interface SalesMetrics {
   totalTransactions: number
   averageOrderValue: number
   profitMargin: number
+  staffPurchases: number
+  supplierPurchases: number
+  customerTransactions: number
 }
 
 export interface BranchSales {
@@ -42,8 +45,9 @@ export interface StaffPerformance {
   role: string
   totalSales: number
   totalTransactions: number
+  customerSales: number
   staffCheckouts: number
-  regularSales: number
+  supplierCheckouts: number
 }
 
 export interface SalesDashboardData {
@@ -173,12 +177,19 @@ export class ReportService {
         throw new Error('Failed to fetch sales data')
       }
 
-      // Calculate metrics
-      const totalRevenue = transactions?.reduce((sum, transaction) => sum + Number(transaction.total_amount), 0) || 0
-      const totalTransactions = transactions?.length || 0
+      // Calculate metrics - only include customer transactions in revenue
+      const customerTransactions = transactions?.filter(t => !t.staff_checkout && !(t as any).supplier_checkout) || []
+      const staffTransactions = transactions?.filter(t => t.staff_checkout && !(t as any).supplier_checkout) || []
+      const supplierTransactions = transactions?.filter(t => (t as any).supplier_checkout) || []
       
-      // Calculate profit (revenue minus supplier costs)
-      const totalProfit = transactions?.reduce((sum, transaction) => {
+      const totalRevenue = customerTransactions.reduce((sum, transaction) => sum + Number(transaction.total_amount), 0)
+      const totalTransactions = transactions?.length || 0
+      const customerTransactionCount = customerTransactions.length
+      const staffPurchases = staffTransactions.reduce((sum, transaction) => sum + Number(transaction.total_amount), 0)
+      const supplierPurchases = supplierTransactions.reduce((sum, transaction) => sum + Number(transaction.total_amount), 0)
+      
+      // Calculate profit - only from customer transactions (revenue minus supplier costs)
+      const totalProfit = customerTransactions.reduce((sum, transaction) => {
         const transactionProfit = transaction.transaction_items?.reduce((itemSum: number, item: any) => {
           const supplierPrice = Number(item.products?.supplier_price || 0)
           const sellingPrice = Number(item.unit_price)
@@ -186,12 +197,12 @@ export class ReportService {
           return itemSum + ((sellingPrice - supplierPrice) * quantity)
         }, 0) || 0
         return sum + transactionProfit
-      }, 0) || 0
+      }, 0)
 
-      const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0
+      const averageOrderValue = customerTransactionCount > 0 ? totalRevenue / customerTransactionCount : 0
 
-      // Group by branch for comparison
-      const branchSales = transactions?.reduce((acc: any, transaction: any) => {
+      // Group by branch for comparison - only customer transactions
+      const branchSales = customerTransactions.reduce((acc: any, transaction: any) => {
         const branchName = transaction.branches?.name || 'Unknown'
         if (!acc[branchName]) {
           acc[branchName] = {
@@ -284,6 +295,7 @@ export class ReportService {
       const staffPerformance = transactions?.reduce((acc: any, transaction: any) => {
         const staffName = transaction.users?.name || 'Unknown'
         const isStaffCheckout = transaction.staff_checkout
+        const isSupplierCheckout = (transaction as any).supplier_checkout
         
         if (!acc[staffName]) {
           acc[staffName] = {
@@ -291,15 +303,18 @@ export class ReportService {
             role: transaction.users?.role || 'unknown',
             totalSales: 0,
             totalTransactions: 0,
+            customerSales: 0,
             staffCheckouts: 0,
-            regularSales: 0
+            supplierCheckouts: 0
           }
         }
         
-        if (isStaffCheckout) {
+        if (isSupplierCheckout) {
+          acc[staffName].supplierCheckouts += Number(transaction.total_amount)
+        } else if (isStaffCheckout) {
           acc[staffName].staffCheckouts += Number(transaction.total_amount)
         } else {
-          acc[staffName].regularSales += Number(transaction.total_amount)
+          acc[staffName].customerSales += Number(transaction.total_amount)
         }
         
         acc[staffName].totalSales += Number(transaction.total_amount)
@@ -314,7 +329,10 @@ export class ReportService {
           totalProfit,
           totalTransactions,
           averageOrderValue,
-          profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
+          profitMargin: totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0,
+          staffPurchases,
+          supplierPurchases,
+          customerTransactions: customerTransactionCount
         },
         branchSales: Object.values(branchSales),
         categorySales: Object.values(categorySales),

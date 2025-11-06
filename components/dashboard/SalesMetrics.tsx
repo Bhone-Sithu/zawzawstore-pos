@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SalesMetrics as SalesMetricsType } from "@/services/report-service"
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Target, BarChart3 } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Target, BarChart3, Users, Package } from "lucide-react"
 
 interface SalesMetricsProps {
   metrics: SalesMetricsType
@@ -23,8 +23,8 @@ export function SalesMetrics({ metrics, isLoading }: SalesMetricsProps) {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        {[...Array(5)].map((_, i) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        {[...Array(7)].map((_, i) => (
           <Card key={i} className="border border-gray-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
@@ -70,6 +70,27 @@ export function SalesMetrics({ metrics, isLoading }: SalesMetricsProps) {
       bgColor: "bg-purple-100"
     },
     {
+      title: "Customer Sales",
+      value: metrics.customerTransactions.toString(),
+      icon: Users,
+      color: "text-green-600",
+      bgColor: "bg-green-100"
+    },
+    {
+      title: "Staff Purchases", 
+      value: formatCurrency(metrics.staffPurchases),
+      icon: Users,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100"
+    },
+    {
+      title: "Supplier Purchases",
+      value: formatCurrency(metrics.supplierPurchases), 
+      icon: Package,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100"
+    },
+    {
       title: "Profit Margin",
       value: formatPercentage(metrics.profitMargin),
       icon: BarChart3,
@@ -79,7 +100,7 @@ export function SalesMetrics({ metrics, isLoading }: SalesMetricsProps) {
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
       {metricCards.map((metric, index) => {
         const Icon = metric.icon
         return (
