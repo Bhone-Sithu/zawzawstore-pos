@@ -143,7 +143,7 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
   }
 
   // Global barcode scanner for automatic detection (keyboard only)
-  const { isScanning } = useBarcodeScanner({
+  useBarcodeScanner({
     onScan: handleAutomaticBarcodeSearch,
     enabled: !showBarcodeScanner, // Enable when modal is closed
     preventDefault: true,

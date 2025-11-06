@@ -1,13 +1,23 @@
 'use client'
 
-import { SignOutButton, useUser } from '@clerk/nextjs'
+import { useState } from 'react'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { LogOut, Store, User } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { DailyReportService, DailySummary } from '@/services/daily-report-service'
+import { supabase } from '@/lib/supabase'
+import EndOfDayModal from './EndOfDayModal'
 
 export default function POSHeader() {
   const { user } = useUser()
+  const { signOut } = useClerk()
+  const { branchId } = useAuth('cashier')
+  const [showEndOfDayModal, setShowEndOfDayModal] = useState(false)
+  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null)
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false)
   
   const currentTime = new Date().toLocaleTimeString('en-MY', {
     hour: '2-digit',
@@ -21,6 +31,35 @@ export default function POSHeader() {
     month: 'long',
     day: 'numeric'
   })
+
+  const handleLogoutClick = async () => {
+    if (!branchId || !user) return
+
+    setIsLoadingSummary(true)
+    setShowEndOfDayModal(true)
+
+    try {
+      // Get cashier ID from database
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('clerk_id', user.id)
+        .single()
+
+      if (userData) {
+        const summary = await DailyReportService.getDailySummary(
+          branchId,
+          userData.id,
+          new Date()
+        )
+        setDailySummary(summary)
+      }
+    } catch (error) {
+      console.error('Failed to generate daily summary:', error)
+    } finally {
+      setIsLoadingSummary(false)
+    }
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
@@ -65,19 +104,27 @@ export default function POSHeader() {
             
             <Separator orientation="vertical" className="h-8" />
             
-            <SignOutButton>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="cursor-pointer text-red-600 border-red-200 hover:bg-red-50"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </SignOutButton>
+            <Button 
+              onClick={handleLogoutClick}
+              variant="outline" 
+              size="sm"
+              className="cursor-pointer text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              End Day & Sign Out
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* End of Day Modal */}
+      <EndOfDayModal
+        isOpen={showEndOfDayModal}
+        onClose={() => setShowEndOfDayModal(false)}
+        onConfirmLogout={() => signOut()}
+        summary={dailySummary}
+        isLoading={isLoadingSummary}
+      />
     </header>
   )
 }

@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PrinterSettings } from "@/components/admin/PrinterSettings"
+import EmailSettings from "@/components/admin/EmailSettings"
 import { BarChart3, TrendingUp, PieChart, Users, RefreshCw, Download, AlertCircle, Settings } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -304,6 +305,7 @@ export default function AdminDashboard() {
 
         <TabsContent value="settings" className="space-y-6">
           <PrinterSettings />
+          <EmailSettings />
         </TabsContent>
       </Tabs>
     </div>

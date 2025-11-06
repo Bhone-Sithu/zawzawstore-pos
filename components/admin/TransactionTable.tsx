@@ -156,7 +156,7 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
         transaction.tax_amount.toFixed(2),
         transaction.discount_amount.toFixed(2),
         transaction.total_amount.toFixed(2),
-        (transaction as any).supplier_checkout ? 'Supplier' : transaction.staff_checkout ? 'Staff' : 'Customer',
+        (transaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout ? 'Supplier' : transaction.staff_checkout ? 'Staff' : 'Customer',
         itemDetails
       ]
     })
@@ -387,7 +387,7 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                       <p className="font-semibold text-gray-900">{formatCurrency(transaction.total_amount)}</p>
                     </TableCell>
                     <TableCell className="py-4 px-4">
-                      {(transaction as any).supplier_checkout ? (
+                      {(transaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout ? (
                         <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                           Supplier
                         </Badge>
@@ -476,7 +476,7 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                         {selectedTransaction.payment_method}
                       </Badge>
                     </div>
-                    {(selectedTransaction as any).supplier_checkout && (
+                    {(selectedTransaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout && (
                       <div className="flex justify-between">
                         <span className="font-medium text-gray-600">Type:</span>
                         <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
@@ -484,7 +484,7 @@ export default function TransactionTable({ branches }: TransactionTableProps) {
                         </Badge>
                       </div>
                     )}
-                    {selectedTransaction.staff_checkout && !(selectedTransaction as any).supplier_checkout && (
+                    {selectedTransaction.staff_checkout && !(selectedTransaction as TransactionWithItems & { supplier_checkout?: boolean }).supplier_checkout && (
                       <div className="flex justify-between">
                         <span className="font-medium text-gray-600">Type:</span>
                         <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">

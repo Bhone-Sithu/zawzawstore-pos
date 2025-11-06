@@ -222,10 +222,8 @@ function POSPageContent() {
         subtotal,
         tax: 0,
         total,
-        amountPaid: paidAmount,
-        change,
         paymentMethod: 'cash',
-        checkoutMode
+        isStaffCheckout: checkoutMode === 'staff'
       }
       
       // Success! Clear cart and show success message

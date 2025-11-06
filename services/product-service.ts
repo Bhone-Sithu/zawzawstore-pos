@@ -198,7 +198,7 @@ export async function fetchPOSProductsPaginated(
         throw new Error(`Failed to fetch POS products: ${error.message}`)
       }
 
-      return await transformProductData(data, count, itemsPerPage, branchId)
+      return await transformProductData(data, count || 0, itemsPerPage, branchId)
     }
 
     // With search term - try multiple queries and combine results
