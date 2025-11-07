@@ -16,4 +16,6 @@ export interface ReceiptData {
   total: number
   paymentMethod: string
   isStaffCheckout: boolean
+  amountPaid?: number
+  change?: number
 }

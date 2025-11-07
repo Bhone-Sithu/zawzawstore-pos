@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { createProduct, updateProduct, generateBarcode } from '@/services/product-service'
+import { createProduct, updateProduct, generateBarcode, reactivateProduct } from '@/services/product-service'
 import { productFormSchema, type ProductFormSchema } from '@/schemas/product.schema'
 import { uploadImageFile } from '@/lib/storage'
 import type { CreateProductData } from '@/types/product.types'
@@ -17,11 +17,18 @@ const defaultValues: ProductFormSchema = {
   barcode: ''
 }
 
+interface ReactivationData {
+  productId: string
+  productName: string
+  message: string
+}
+
 export function useProductForm(editProduct?: Product | null) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [reactivationDialog, setReactivationDialog] = useState<ReactivationData | null>(null)
   const isEditMode = !!editProduct
 
   const form = useForm<ProductFormSchema>({
@@ -53,6 +60,25 @@ export function useProductForm(editProduct?: Product | null) {
     form.reset(defaultValues)
     setSubmitError(null)
     setImageFile(null)
+    setReactivationDialog(null)
+  }
+
+  const handleReactivateProduct = async (productId: string, updateData: CreateProductData): Promise<boolean> => {
+    setLoading(true)
+    setSubmitError(null)
+    
+    try {
+      await reactivateProduct(productId, updateData)
+      router.push('/admin/products')
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reactivate product'
+      setSubmitError(errorMessage)
+      return false
+    } finally {
+      setLoading(false)
+      setReactivationDialog(null)
+    }
   }
 
   const submitForm = async (data: ProductFormSchema): Promise<boolean> => {
@@ -91,6 +117,16 @@ export function useProductForm(editProduct?: Product | null) {
       router.push('/admin/products')
       return true
     } catch (error) {
+      // Handle reactivation scenario
+      if (error instanceof Error && error.name === 'REACTIVATE_PRODUCT') {
+        setReactivationDialog({
+          productId: (error as any).productId,
+          productName: (error as any).productName,
+          message: error.message
+        })
+        return false
+      }
+
       const errorMessage = error instanceof Error ? error.message : 
         isEditMode ? 'Failed to update product' : 'Failed to create product'
       
@@ -113,6 +149,9 @@ export function useProductForm(editProduct?: Product | null) {
     setImageFile,
     generateBarcode: handleGenerateBarcode,
     clearForm,
-    submitForm
+    submitForm,
+    reactivationDialog,
+    setReactivationDialog,
+    handleReactivateProduct
   }
 }

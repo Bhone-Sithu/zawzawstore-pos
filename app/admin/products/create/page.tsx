@@ -7,11 +7,15 @@ import { useAuth } from '@/hooks/use-auth'
 import { useProductForm } from '@/hooks/use-product-form'
 import { useCategories } from '@/hooks/use-categories'
 import { Form } from '@/components/ui/form'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import ProductFormFields from '@/components/products/ProductFormFields'
 import ImageUploadSection from '@/components/products/ImageUploadSection'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import { supabase } from '@/lib/supabase'
 import type { Product } from '@/types/database.types'
+import type { CreateProductData } from '@/types/product.types'
+import { uploadImageFile } from '@/lib/storage'
 
 export default function CreateProductPage() {
   const router = useRouter()
@@ -32,7 +36,10 @@ export default function CreateProductPage() {
     setImageFile,
     generateBarcode,
     clearForm,
-    submitForm
+    submitForm,
+    reactivationDialog,
+    setReactivationDialog,
+    handleReactivateProduct
   } = useProductForm(editProduct)
 
   // Load product for editing
@@ -65,6 +72,38 @@ export default function CreateProductPage() {
 
   const handleCancel = () => {
     router.push('/admin/products')
+  }
+
+  const handleConfirmReactivation = async () => {
+    if (!reactivationDialog) return
+
+    const formData = form.getValues()
+    
+    let imageUrl: string | null = null
+    if (imageFile) {
+      const result = await uploadImageFile(imageFile, 'products')
+      if (result.error) {
+        alert('Failed to upload image')
+        return
+      }
+      imageUrl = result.url
+    }
+
+    const productData: CreateProductData = {
+      barcode: formData.barcode,
+      name_en: formData.name_en,
+      name_mm: formData.name_mm,
+      category_id: formData.category_id || null,
+      supplier_price: formData.supplier_price || null,
+      base_price: formData.base_price,
+      image: imageUrl
+    }
+
+    await handleReactivateProduct(reactivationDialog.productId, productData)
+  }
+
+  const handleCancelReactivation = () => {
+    setReactivationDialog(null)
   }
 
   if (authLoading || loadingProduct) {
@@ -152,6 +191,34 @@ export default function CreateProductPage() {
           </div>
         )}
       </main>
+
+      {/* Reactivation Confirmation Dialog */}
+      <Dialog open={!!reactivationDialog} onOpenChange={() => setReactivationDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reactivate Deleted Product?</DialogTitle>
+            <DialogDescription>
+              {reactivationDialog?.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCancelReactivation}
+              disabled={loading}
+            >
+              No, Create New Product
+            </Button>
+            <Button
+              onClick={handleConfirmReactivation}
+              disabled={loading}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              {loading ? 'Reactivating...' : 'Yes, Reactivate Product'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

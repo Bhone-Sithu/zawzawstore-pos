@@ -45,11 +45,21 @@ function POSPageContent() {
   const [suppliers, setSuppliers] = useState<Pick<Supplier, 'id' | 'name' | 'phone' | 'contact_person'>[]>([])
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('')
   const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false)
+  const [stockUpdates, setStockUpdates] = useState<Map<string, number>>(new Map())
 
   // Set QZ Tray method for cashier devices (thermal printers)
   React.useEffect(() => {
     setMethod('qz-tray')
   }, [setMethod])
+
+  // Periodic refresh for data consistency (every 5 minutes)
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTrigger(prev => prev + 1)
+    }, 5 * 60 * 1000) // 5 minutes
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Fetch suppliers when component mounts
   useEffect(() => {
@@ -67,6 +77,16 @@ function POSPageContent() {
 
     fetchSuppliers()
   }, [])
+
+  // Handle stock updates for optimistic UI
+  const handleStockUpdate = (productId: string, quantityChange: number) => {
+    setStockUpdates(prev => {
+      const newMap = new Map(prev)
+      const currentChange = newMap.get(productId) || 0
+      newMap.set(productId, currentChange + quantityChange)
+      return newMap
+    })
+  }
 
   // Cart management functions
   const addToCart = (product: {
@@ -126,11 +146,19 @@ function POSPageContent() {
     setCartItems(prev =>
       prev.map(item => {
         if (item.id === itemId) {
+          const oldQuantity = item.quantity
           // Don't allow quantity to exceed stock
           const validQuantity = Math.min(newQuantity, item.stock)
           if (newQuantity > item.stock) {
             alert(`Only ${item.stock} items available in stock!`)
           }
+          
+          // Update stock tracking if quantity changed
+          const quantityDiff = validQuantity - oldQuantity
+          if (quantityDiff !== 0) {
+            handleStockUpdate(itemId, -quantityDiff)
+          }
+          
           return { ...item, quantity: validQuantity }
         }
         return item
@@ -152,10 +180,21 @@ function POSPageContent() {
   }
 
   const removeFromCart = (itemId: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== itemId))
+    setCartItems(prev => {
+      const itemToRemove = prev.find(item => item.id === itemId)
+      if (itemToRemove) {
+        // Return stock when removing item
+        handleStockUpdate(itemId, itemToRemove.quantity)
+      }
+      return prev.filter(item => item.id !== itemId)
+    })
   }
 
   const clearCart = () => {
+    // Return all stock when clearing cart
+    cartItems.forEach(item => {
+      handleStockUpdate(item.id, item.quantity)
+    })
     setCartItems([])
   }
 
@@ -262,16 +301,18 @@ function POSPageContent() {
         tax: 0,
         total,
         paymentMethod: 'cash',
-        isStaffCheckout: checkoutMode === 'staff'
+        isStaffCheckout: checkoutMode === 'staff',
+        amountPaid: paidAmount,
+        change: change
       }
       
       // Success! Clear cart and show success message
-      clearCart()
+      setCartItems([]) // Clear cart without returning stock (it's been sold)
+      setStockUpdates(new Map()) // Clear optimistic stock updates
       setCheckoutMode('customer')
       setAmountPaid('')
       setSelectedSupplierId('')
-      // Refresh product list to update stock quantities
-      setRefreshTrigger(prev => prev + 1)
+      // Note: Stock updates are now handled optimistically in real-time
       const checkoutType = checkoutMode === 'staff' ? 'Staff' : checkoutMode === 'supplier' ? 'Supplier' : 'Customer'
       
       // Show success message
@@ -311,7 +352,7 @@ function POSPageContent() {
           <div className="lg:col-span-2 flex flex-col">
             <Card className="flex-1 flex flex-col">
               <CardContent className="flex-1 flex flex-col">
-                {branchId && <POSProductSearch branchId={branchId} onAddToCart={addToCart} refreshTrigger={refreshTrigger} />}
+                {branchId && <POSProductSearch branchId={branchId} onAddToCart={addToCart} onStockUpdate={handleStockUpdate} refreshTrigger={refreshTrigger} />}
               </CardContent>
             </Card>
           </div>

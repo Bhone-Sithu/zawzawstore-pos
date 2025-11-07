@@ -25,9 +25,10 @@ interface POSProductSearchProps {
     price?: number
     category?: { custom_price: boolean }
   }) => void
+  onStockUpdate?: (productId: string, quantityChange: number) => void
 }
 
-export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddToCart }: POSProductSearchProps) {
+export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddToCart, onStockUpdate }: POSProductSearchProps) {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
   
   const {
@@ -46,7 +47,8 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
     setFilterCategory,
     handleSearch,
     clearSearch,
-    getProductByBarcode
+    getProductByBarcode,
+    updateProductStock
   } = usePOSProducts(branchId, refreshTrigger)
 
   const handleProductAdd = (product: {
@@ -65,12 +67,19 @@ export default function POSProductSearch({ branchId, refreshTrigger = 0, onAddTo
       return
     }
 
+    // Add to cart
     onAddToCart({
       ...product,
       stock: product.stock,
       price: product.price || product.base_price,
       category: product.category ? { custom_price: product.category.custom_price } : undefined
     })
+
+    // Optimistically update stock (decrease by 1)
+    updateProductStock(product.id, -1)
+    
+    // Also notify parent component for cart tracking
+    onStockUpdate?.(product.id, -1)
   }
 
   // Handle barcode scan from BarcodeInput component (when focused)

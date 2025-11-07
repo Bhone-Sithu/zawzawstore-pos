@@ -3,6 +3,23 @@ import type { Category, Product } from '@/types/database.types'
 import type { CreateProductData } from '@/types/product.types'
 
 export async function createProduct(data: CreateProductData): Promise<Product> {
+  // First, check if there's an inactive product with the same barcode
+  const { data: existingProduct } = await supabase
+    .from('products')
+    .select('*')
+    .eq('barcode', data.barcode)
+    .eq('is_active', false)
+    .single()
+
+  // If there's an inactive product with this barcode, throw a special error
+  if (existingProduct) {
+    const error = new Error(`A deleted product "${existingProduct.name_en}" already uses this barcode. Would you like to reactivate it instead?`)
+    error.name = 'REACTIVATE_PRODUCT'
+    ;(error as any).productId = existingProduct.id
+    ;(error as any).productName = existingProduct.name_en
+    throw error
+  }
+
   const productData = {
     ...data,
     is_active: true,
@@ -18,7 +35,7 @@ export async function createProduct(data: CreateProductData): Promise<Product> {
 
   if (error) {
     if (error.message?.includes('barcode')) {
-      throw new Error('This barcode is already in use')
+      throw new Error('This barcode is already in use by an active product')
     }
     throw new Error('Failed to create product. Please try again.')
   }
@@ -143,12 +160,38 @@ export async function fetchProductsPaginated(
 export async function deleteProduct(id: string): Promise<void> {
   const { error } = await supabase
     .from('products')
-    .update({ is_active: false })
+    .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq('id', id)
 
   if (error) {
     throw new Error('Failed to delete product')
   }
+}
+
+export async function reactivateProduct(id: string, updateData?: Partial<CreateProductData>): Promise<Product> {
+  const productData = {
+    is_active: true,
+    updated_at: new Date().toISOString(),
+    ...updateData
+  }
+
+  const { data: product, error } = await supabase
+    .from('products')
+    .update(productData)
+    .eq('id', id)
+    .eq('is_active', false) // Only reactivate if currently inactive
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error('Failed to reactivate product')
+  }
+
+  if (!product) {
+    throw new Error('Product not found or already active')
+  }
+
+  return product
 }
 
 // POS-specific function to fetch products with inventory data for a specific branch

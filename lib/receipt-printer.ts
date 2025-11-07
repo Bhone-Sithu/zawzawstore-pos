@@ -240,6 +240,13 @@ export class ReceiptPrinter {
 
       // Payment method
       await this.sendText(this.formatLine('Payment:', receiptData.paymentMethod.toUpperCase()) + COMMANDS.LINE_FEED)
+      
+      // Amount paid and change (only if provided)
+      if (receiptData.amountPaid !== undefined && receiptData.change !== undefined) {
+        await this.sendText(this.formatLine('Amount Paid:', `RM ${receiptData.amountPaid.toFixed(2)}`) + COMMANDS.LINE_FEED)
+        await this.sendText(this.formatLine('Change:', `RM ${receiptData.change.toFixed(2)}`) + COMMANDS.LINE_FEED)
+      }
+      
       await this.printDashedLine()
 
       // Footer
@@ -398,6 +405,16 @@ export const printReceiptFallback = (receiptData: ReceiptData): void => {
               <span>Payment Method:</span>
               <span class="bold">${receiptData.paymentMethod.toUpperCase()}</span>
             </div>
+            ${receiptData.amountPaid !== undefined && receiptData.change !== undefined ? `
+              <div class="flex">
+                <span>Amount Paid:</span>
+                <span class="bold">RM ${receiptData.amountPaid.toFixed(2)}</span>
+              </div>
+              <div class="flex">
+                <span>Change:</span>
+                <span class="bold">RM ${receiptData.change.toFixed(2)}</span>
+              </div>
+            ` : ''}
           </div>
 
           <div class="center small">

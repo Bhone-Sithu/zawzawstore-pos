@@ -22,6 +22,7 @@ interface UsePOSProductsReturn {
   showingFrom: number
   showingTo: number
   getProductByBarcode: (barcode: string) => Promise<ProductWithInventory | null>
+  updateProductStock: (productId: string, quantityChange: number) => void
 }
 
 const ITEMS_PER_PAGE = 12 // Slightly more for POS display
@@ -121,6 +122,22 @@ export function usePOSProducts(branchId: string, refreshTrigger: number = 0): Us
     loadProducts()
   }, [loadProducts])
 
+  // Optimistic stock update - update local state immediately
+  const updateProductStock = useCallback((productId: string, quantityChange: number) => {
+    setProducts(prevProducts => 
+      prevProducts.map(product => {
+        if (product.id === productId) {
+          const newStock = Math.max(0, (product.stock || 0) + quantityChange)
+          return {
+            ...product,
+            stock: newStock
+          }
+        }
+        return product
+      })
+    )
+  }, [])
+
   return {
     products,
     categories,
@@ -139,6 +156,7 @@ export function usePOSProducts(branchId: string, refreshTrigger: number = 0): Us
     refreshProducts,
     showingFrom,
     showingTo,
-    getProductByBarcode
+    getProductByBarcode,
+    updateProductStock
   }
 }

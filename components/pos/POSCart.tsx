@@ -1,5 +1,6 @@
 'use client'
 
+import React, { useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,18 @@ export default function POSCart({
   onRemoveItem, 
   onClearCart 
 }: POSCartProps) {
+  const cartScrollRef = useRef<HTMLDivElement>(null)
+  const lastItemRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to last item when items are added
+  useEffect(() => {
+    if (items.length > 0 && lastItemRef.current) {
+      lastItemRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end'
+      })
+    }
+  }, [items.length])
   
   if (items.length === 0) {
     return (
@@ -82,10 +95,17 @@ export default function POSCart({
       </div>
 
       {/* Cart Items - Limited to 5 items with scroll */}
-      <div className="overflow-y-auto space-y-3 pr-2 max-h-[400px]"
-           style={{ scrollbarWidth: 'thin' }}>
-        {items.map(item => (
-          <div key={item.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+      <div 
+        ref={cartScrollRef}
+        className="overflow-y-auto space-y-3 pr-2 max-h-[400px]"
+        style={{ scrollbarWidth: 'thin' }}
+      >
+        {items.map((item, index) => (
+          <div 
+            key={item.id} 
+            ref={index === items.length - 1 ? lastItemRef : null}
+            className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+          >
             <div className="flex items-start gap-3">
               {/* Product Image */}
               <div className="w-12 h-12 bg-white rounded-md overflow-hidden flex-shrink-0">

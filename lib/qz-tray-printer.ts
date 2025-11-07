@@ -258,6 +258,13 @@ export class QZTrayPrinter {
     
     // Payment method
     lines.push(justifyText('Payment:', receiptData.paymentMethod.toUpperCase()))
+    
+    // Amount paid and change (only if provided)
+    if (receiptData.amountPaid !== undefined && receiptData.change !== undefined) {
+      lines.push(justifyText('Amount Paid:', `RM ${receiptData.amountPaid.toFixed(2)}`))
+      lines.push(justifyText('Change:', `RM ${receiptData.change.toFixed(2)}`))
+    }
+    
     lines.push(''.padEnd(width, '-'))
     
     // Footer
@@ -411,6 +418,16 @@ export class QZTrayPrinter {
                 <span>Payment Method:</span>
                 <span class="bold">${receiptData.paymentMethod.toUpperCase()}</span>
               </div>
+              ${receiptData.amountPaid !== undefined && receiptData.change !== undefined ? `
+                <div class="flex">
+                  <span>Amount Paid:</span>
+                  <span class="bold">RM ${receiptData.amountPaid.toFixed(2)}</span>
+                </div>
+                <div class="flex">
+                  <span>Change:</span>
+                  <span class="bold">RM ${receiptData.change.toFixed(2)}</span>
+                </div>
+              ` : ''}
             </div>
 
             <div class="center small">
